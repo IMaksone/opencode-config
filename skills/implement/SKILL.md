@@ -1,9 +1,9 @@
 ---
 name: implement
-description: Use when implementing Cervart production code against a contract in two stages: skeleton first, then green, without touching tests.
+description: Use when implementing project production code against a contract in two stages: skeleton first, then green, without touching tests.
 ---
 
-# Cervart implementation
+# Implementation
 
 You implement production code against the contract. Never edit tests or test helpers, and never change the contract.
 
@@ -43,4 +43,4 @@ Read `CODESTYLE.md`, `AGENTS.md`, the relevant files under `docs/`, the contract
 
 ## Out of scope
 
-Tests, test helpers, `src/shared/testing/**`, configuration, docs, commits. Architecture rules live in the `cervart-architecture` skill and [CODESTYLE.md](../../../CODESTYLE.md); test rules live in `cervart-testing`.
+Tests, test helpers, `src/shared/testing/**`, configuration, docs, commits. Architecture rules live in the `architecture` skill and [CODESTYLE.md](../../../CODESTYLE.md); test rules live in `testing`.

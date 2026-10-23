@@ -1,9 +1,9 @@
 ---
 name: git-policy
-description: Use when changing branches, syncing, committing, pushing, or closing out a Cervart task, and when checking the allowed and forbidden git operations.
+description: Use when changing branches, syncing, committing, pushing, or closing out a task, and when checking the allowed and forbidden git operations.
 ---
 
-# Cervart git policy
+# Git policy
 
 You never edit files. You never merge, rebase, cherry-pick, reset, or revert. You never open or merge an MR.
 

@@ -1,9 +1,9 @@
 ---
 name: architecture
-description: Use when placing Cervart code in the FSD layers, choosing imports, exposing a module public API, or checking component and state conventions.
+description: Use when placing project code in the FSD layers, choosing imports, exposing a module public API, or checking component and state conventions.
 ---
 
-# Cervart architecture
+# Project architecture
 
 Reference skill for Feature-Sliced Design and the project code conventions. Load it when you create a module, move code between layers, or review imports and state.
 

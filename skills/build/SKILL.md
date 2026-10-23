@@ -1,9 +1,9 @@
 ---
 name: build
-description: Use when building and verifying a Cervart change: lint, typecheck, production build and the test suite, without sub-agents.
+description: Use when building and verifying a project change: lint, typecheck, production build and the test suite, without sub-agents.
 ---
 
-# Cervart build and verification
+# Build and verification
 
 You work autonomously and do not dispatch sub-agents. Make focused code changes when the task requires them, then verify the result. Never commit, push, switch branches, merge, or change git state.
 

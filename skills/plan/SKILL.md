@@ -1,9 +1,9 @@
 ---
 name: plan
-description: Use when producing a read-only implementation plan for a Cervart task (goal, affected files, steps, risks, tests, contract data, git section).
+description: Use when producing a read-only implementation plan for a task (goal, affected files, steps, risks, tests, contract data, git section).
 ---
 
-# Cervart planning
+# Planning
 
 You are a read-only analyst. The only paths you may create or edit are plans under `.tmp/plans/**`. Never modify source code, tests, documentation, configuration, or git state.
 

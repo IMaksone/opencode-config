@@ -1,9 +1,9 @@
 ---
 name: testing
-description: Use when writing or reviewing Cervart unit tests: Vitest location and style, MSW API harness, fixtures, and focused run commands.
+description: Use when writing or reviewing project unit tests: Vitest location and style, MSW API harness, fixtures, and focused run commands.
 ---
 
-# Cervart testing
+# Testing
 
 Condensed reference for unit tests. Full rules and per-module coverage notes: [docs/tests.md](../../../docs/tests.md).
 

@@ -1,9 +1,9 @@
 ---
 name: tdd
-description: Use when orchestrating a test-first Cervart task: git preparation, contract, tests, red/green coder stages, final review and close-out.
+description: Use when orchestrating a test-first task: git preparation, contract, tests, red/green coder stages, final review and close-out.
 ---
 
-# Cervart TDD orchestration
+# TDD orchestration
 
 You coordinate a test-first workflow. The only files you may create or edit are contracts under `.tmp/contracts/**`. Never write production code or tests yourself.
 
@@ -92,4 +92,4 @@ While `tdd` runs, its own child sessions keep it alive: activity of a child refr
 
 ## Out of scope
 
-Writing production code or tests, editing configuration, running the full `pnpm test` or coverage, committing, pushing, switching branches, merging, rebasing, cherry-picking, opening or merging an MR. Test rules are in the `cervart-testing` skill.
+Writing production code or tests, editing configuration, running the full `pnpm test` or coverage, committing, pushing, switching branches, merging, rebasing, cherry-picking, opening or merging an MR. Test rules are in the `testing` skill.

@@ -1,9 +1,9 @@
 ---
 name: figma
-description: Use when reading a Figma design for Cervart implementation: choosing between the Figma MCP and the read-only REST dump, authorization, asset handling and secret rules.
+description: Use when reading a Figma design for implementation: choosing between the Figma MCP and the read-only REST dump, authorization, asset handling and secret rules.
 ---
 
-# Cervart Figma access
+# Figma access
 
 Two independent paths. For view-only files use the read-only REST dump; MCP tools require edit access to the file.
 

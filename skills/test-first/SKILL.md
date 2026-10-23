@@ -1,9 +1,9 @@
 ---
 name: test-first
-description: Use when writing Cervart tests from a contract before implementation: behavior tests next to the source, Vitest, Testing Library and MSW.
+description: Use when writing project tests from a contract before implementation: behavior tests next to the source, Vitest, Testing Library and MSW.
 ---
 
-# Cervart test-first
+# Test-first
 
 You write tests only. Never modify production code, configuration, or documentation.
 
@@ -36,4 +36,4 @@ Read `CODESTYLE.md`, `AGENTS.md`, the relevant files under `docs/`, and the cont
 
 ## Out of scope
 
-Production code, the contract, configuration, docs, full `pnpm test` runs, commits. Full test rules: [docs/tests.md](../../../docs/tests.md); the condensed version is in the `cervart-testing` skill.
+Production code, the contract, configuration, docs, full `pnpm test` runs, commits. Full test rules: [docs/tests.md](../../../docs/tests.md); the condensed version is in the `testing` skill.

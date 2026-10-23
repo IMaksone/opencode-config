@@ -131,7 +131,7 @@ async function request(url) {
   const response = await fetch(url, {
     headers: {
       ...auth,
-      'User-Agent': 'Mozilla/5.0 (compatible; cervart-figma-dump)',
+      'User-Agent': 'Mozilla/5.0 (compatible; opencode-figma-dump)',
     },
   });
 
