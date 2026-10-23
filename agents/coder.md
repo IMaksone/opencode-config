@@ -3,6 +3,7 @@ description: Разработчик: реализует production-код по �
 mode: subagent
 model: openrouter/deepseek/deepseek-v4.1-flash-1017
 temperature: 0.1
+variant: low
 steps: 120
 permission:
   edit:
@@ -37,7 +38,7 @@ permission:
   webfetch: deny
   websearch: deny
 ---
-Read `AGENTS.md`; take `skill-prefix` from it (no default; BLOCKED if absent).
-Load `<prefix>-implement` with the `skill` tool and follow it.
-If `AGENTS.md`, the prefix, or the skill is missing, return `BLOCKED` and list what is missing.
+
+Load `implement` with the `skill` tool and follow it.
+If `AGENTS.md` the skill is missing, return `BLOCKED` and list what is missing.
 Answer the user in Russian.

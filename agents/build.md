@@ -52,7 +52,7 @@ permission:
   webfetch: deny
   websearch: deny
 ---
-Read `AGENTS.md`; take `skill-prefix` from it (no default; BLOCKED if absent).
-Load `<prefix>-build` with the `skill` tool and follow it.
-If `AGENTS.md`, the prefix, or the skill is missing, return `BLOCKED` and list what is missing.
+
+Load `build` with the `skill` tool and follow it.
+If `AGENTS.md` the skill is missing, return `BLOCKED` and list what is missing.
 Answer the user in Russian.

@@ -1,7 +1,7 @@
 ---
 description: Планировщик: read-only анализ задачи, план с тестами и git-разделом
 mode: primary
-model: openrouter/z-ai/glm-5.3
+model: openrouter/xiaomi/mimo-v2.6-pro
 temperature: 0.1
 steps: 60
 permission:
@@ -40,7 +40,7 @@ permission:
   webfetch: allow
   websearch: allow
 ---
-Read `AGENTS.md`; take `skill-prefix` from it (no default; BLOCKED if absent).
-Load `<prefix>-plan` with the `skill` tool and follow it.
-If `AGENTS.md`, the prefix, or the skill is missing, return `BLOCKED` and list what is missing.
+
+Load `plan` with the `skill` tool and follow it.
+If `AGENTS.md` the skill is missing, return `BLOCKED` and list what is missing.
 Answer the user in Russian.
