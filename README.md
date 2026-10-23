@@ -6,17 +6,19 @@ Config for [opencode](https://opencode.ai). One repository, several variants in 
 
 | Branch | Purpose |
 | --- | --- |
-| `main` | Universal minimal skeleton. No stack, no project rules. Start here to build a new variant. |
+| `main` | Universal skeleton: stack-agnostic agents and skills, no project rules. Start here to build a new variant. |
 | `ts-react-modules-slices` | Full config for a TypeScript + React project with module slices (FSD). |
 
 ## What is here
 
 - `opencode.json` — minimal config: schema and `subagent_depth`.
+- `agents/` — stack-agnostic agents: `plan`, `build`, `tdd`, `coder`, `test-generator`, `git-manager`.
+- `skills/` — stack-agnostic skills: `plan`, `build`, `implement`, `test-first`, `testing`, `architecture`, `git-policy`, `tdd`.
 - `plugins/subagent-watchdog.ts` — aborts subagent sessions that stay busy without activity.
 - `watchdog/` — watchdog state and tests.
 - `package.json`, `package-lock.json` — dependency of the plugin.
 
-Everything stack- and workflow-specific (agents, commands, skills, Figma, git policy) lives in variant branches.
+Agents and skills here contain no stack or project assumptions: verification commands, test framework, layout, and branch conventions are discovered from the project or taken from the user. Everything stack- and project-specific (commands, Figma, module architecture, fixed tooling) lives in variant branches.
 
 ## Install
 
