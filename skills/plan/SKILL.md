@@ -21,7 +21,11 @@ Read `CODESTYLE.md`, `AGENTS.md`, and the relevant files under `docs/` before pl
 2. If tracked files are modified or staged, decide whether they belong to this task. If they do not, stop and list the paths. Do not plan on top of unrelated changes.
 3. Keep exactly one open plan at a time. If `.tmp/plans/` already contains a plan for another task, stop and ask.
 4. Explore the codebase: FSD layer boundaries, existing public APIs, related tests, and docs. Prefer reading over guessing.
-5. Write the plan to `.tmp/plans/<task-slug>.md`.
+5. Before dispatching `@tdd` or `@build`, call the `agent_config_check` tool and record its result in the plan's **Runtime** section:
+   - `fresh !== true` → `BLOCKED`: «конфиг агентов изменён после старта opencode — перезапусти сервер»;
+   - a guarded agent (`tdd`, `build`, `coder`, `test-generator`, `git-manager`) appears in `missingModel` → `BLOCKED` naming it;
+   - the tool is unavailable → `BLOCKED` naming the missing tool.
+6. Write the plan to `.tmp/plans/<task-slug>.md`.
 
 ## Plan format
 
@@ -31,6 +35,7 @@ Read `CODESTYLE.md`, `AGENTS.md`, and the relevant files under `docs/` before pl
 - **Risks**
 - **Tests** — what to test, TDD order, focused commands
 - **Contract data** — behavior, API/types, errors, UI/selectors, state/URL, fixtures/MSW, test identifiers, out of scope
+- **Runtime** — `agent → model` map from `agent_config_check`, `fresh` status, `serverStartedAt` of the running instance
 - **Git**
 
 The Git section must contain:
@@ -53,6 +58,7 @@ One plan file under `.tmp/plans/` and a short Russian summary: goal, key steps, 
 - The task number, base branch, or valid initials are missing.
 - Unrelated tracked files are modified or staged.
 - A plan for another task is already open.
+- `agent_config_check` reports `fresh !== true` («конфиг агентов изменён после старта opencode — перезапусти сервер»), a guarded agent appears in `missingModel`, or the tool is unavailable.
 - Writing the plan fails: report the error, do not retry.
 - A `tdd` or `build` subagent dispatched from this plan is aborted by the watchdog: do not restart it, return `BLOCKED` naming the interrupted step.
 

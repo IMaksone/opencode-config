@@ -17,6 +17,17 @@ Read `CODESTYLE.md`, `AGENTS.md`, the relevant files under `docs/`, and the plan
 
 ## Process
 
+### 0. Agent config check
+
+Before the first dispatch and before **every** later dispatch, call the `agent_config_check` tool and read its JSON result:
+
+- `fresh !== true` → return `BLOCKED` with «конфиг агентов изменён после старта opencode — перезапусти сервер» and list `checked`.
+- `missingModel` contains `test-generator`, `coder`, or `git-manager` → return `BLOCKED` naming those agents.
+- If the tool is unavailable, return `BLOCKED` naming the missing tool.
+- Remember the `agents` map (`agent → model`) so every dispatch can be checked against it.
+
+The guard lives in the running opencode instance: agent files, skills, commands, `AGENTS.md`, `local.md` and root `opencode.json(c)` are snapshotted at startup, so edits to them are not applied until opencode restarts. Dispatch from a stale instance is blocked by the plugin and must be treated as `BLOCKED`, never retried.
+
 ### 1. Git preparation
 
 1. Check `git status --porcelain` and `git branch --show-current`.
@@ -88,6 +99,7 @@ While `tdd` runs, its own child sessions keep it alive: activity of a child refr
 - The user has not confirmed a branch switch or close-out.
 - `git-manager`, `test-generator`, or `coder` returns `BLOCKED`.
 - A stage was aborted by the watchdog twice without progress (“watchdog прервал дважды без прогресса”).
+- `agent_config_check` reports `fresh !== true` («конфиг агентов изменён после старта opencode — перезапусти сервер»), a guarded agent appears in `missingModel`, or the tool is unavailable.
 - The contract lacks a symbol, identifier, or selector that the tests need.
 
 ## Out of scope
