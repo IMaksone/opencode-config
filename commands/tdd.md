@@ -1,7 +1,7 @@
 ---
-description: TDD mode (contract, tests, red/green, close-out)
+description: TDD mode (contract, tests, red/green per plan task, pauses with a report, close-out)
 agent: tdd
-model: openrouter/z-ai/glm-5.3
+model: openrouter/z-ai/glm-5.3#temp-low
 ---
 
 Load `tdd` with the `skill` tool and follow it.

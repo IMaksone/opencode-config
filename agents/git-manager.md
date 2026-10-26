@@ -1,144 +1,125 @@
 ---
 description: Git-менеджер: ветки, коммиты, push; без merge/rebase/cherry-pick
 mode: all
-model: openrouter/deepseek/deepseek-v4.1-flash-1017
-temperature: 0.1
-variant: low
+model: openrouter/deepseek/deepseek-v4.1-flash-1017#low
 steps: 60
-permission:
-  edit:
-    "*": deny
-  bash:
-    "*": deny
-    ls: allow
-    "ls *": allow
-    cat: allow
-    "cat *": allow
-    head: allow
-    "head *": allow
-    tail: allow
-    "tail *": allow
-    rg: allow
-    "rg *": allow
-    wc: allow
-    "wc *": allow
-    "git status": allow
-    "git status *": allow
-    "git diff": allow
-    "git diff *": allow
-    "git log": allow
-    "git log *": allow
-    "git show": allow
-    "git show *": allow
-    "git branch --list": allow
-    "git branch -a": allow
-    "git branch -vv": allow
-    "git branch --show-current": allow
-    "git remote -v": allow
-    "git rev-parse *": allow
-    "git ls-files *": allow
-    "git fetch": allow
-    "git fetch *": allow
-    "git pull --ff-only": allow
-    "git pull --ff-only *": allow
-    "git add *": allow
-    "git commit -m *": allow
-    "git switch -c *": allow
-    "git switch *": allow
-    "git push origin *": allow
-    "git merge": deny
-    "git merge *": deny
-    "git rebase *": deny
-    "git cherry-pick *": deny
-    "git reset *": deny
-    "git revert *": deny
-    "git clean *": deny
-    "git checkout -- *": deny
-    "git checkout .": deny
-    "git restore *": deny
-    "git stash *": deny
-    "git branch -d *": deny
-    "git branch -D *": deny
-    "git branch -m *": deny
-    "git tag *": deny
-    "git worktree *": deny
-    "git submodule *": deny
-    "git config *": deny
-    "git gc *": deny
-    "git filter-branch *": deny
-    "git reflog expire *": deny
-    "git switch -f*": deny
-    "git switch * -f*": deny
-    "git switch --force*": deny
-    "git switch * --force*": deny
-    "git switch --di*": deny
-    "git switch * --di*": deny
-    "git switch -C*": deny
-    "git switch * -C*": deny
-    "git add -A": deny
-    "git add -A *": deny
-    "git add --all*": deny
-    "git add --a*": deny
-    "git add -p": deny
-    "git add -p *": deny
-    "git add -i": deny
-    "git add -i *": deny
-    "git add --patch*": deny
-    "git add --interactive*": deny
-    "git add -f*": deny
-    "git add * -f*": deny
-    "git add .": deny
-    "git add . *": deny
-    "git commit --amend*": deny
-    "git commit * --amend*": deny
-    "git commit --no-verify*": deny
-    "git commit * --no-verify*": deny
-    "git commit * --no-v*": deny
-    "git commit * --am*": deny
-    "git commit * -n*": deny
-    "git commit * --edit*": deny
-    "git commit * -e*": deny
-    "git commit * -c*": deny
-    "git commit * --reedit-message*": deny
-    "git push --force*": deny
-    "git push -f *": deny
-    "git push --delete *": deny
-    "git push --mirror *": deny
-    "git push --tags": deny
-    "git push * -*": deny
-    "git push * +*": deny
-    "git push * :*": deny
-    "git push * main": deny
-    "git push * main *": deny
-    "git push *:main": deny
-    "git push * master": deny
-    "git push * master *": deny
-    "git push *:master": deny
-    "git push * develop": deny
-    "git push * develop *": deny
-    "git push *:develop": deny
-    "git push * test": deny
-    "git push * test *": deny
-    "git push *:test": deny
-    "git push * trunk": deny
-    "git push * trunk *": deny
-    "git push *:trunk": deny
-    "git push * release": deny
-    "git push * release *": deny
-    "git push *:release": deny
-    "git push * refs/*": deny
-    "git push origin HEAD": deny
-    "git switch -m*": deny
-    "git switch * -m*": deny
-    "git switch --merge*": deny
-    "git switch * --merge*": deny
-    "git switch --orphan*": deny
-    "git switch * --orphan*": deny
-    "git switch --guess*": deny
-    "git switch * --guess*": deny
-  task: deny
-  webfetch: deny
-  websearch: deny
+permissions:
+  - { action: execute, resource: "*", effect: deny }
+  - { action: edit, resource: "*", effect: deny }
+  - { action: shell, resource: "*", effect: deny }
+  - { action: shell, resource: "ls *", effect: allow }
+  - { action: shell, resource: "cat *", effect: allow }
+  - { action: shell, resource: "head *", effect: allow }
+  - { action: shell, resource: "tail *", effect: allow }
+  - { action: shell, resource: "rg *", effect: allow }
+  - { action: shell, resource: "wc *", effect: allow }
+  - { action: shell, resource: "git status *", effect: allow }
+  - { action: shell, resource: "git diff *", effect: allow }
+  - { action: shell, resource: "git log *", effect: allow }
+  - { action: shell, resource: "git show *", effect: allow }
+  - { action: shell, resource: "git branch --list", effect: allow }
+  - { action: shell, resource: "git branch -a", effect: allow }
+  - { action: shell, resource: "git branch -vv", effect: allow }
+  - { action: shell, resource: "git branch --show-current", effect: allow }
+  - { action: shell, resource: "git remote -v", effect: allow }
+  - { action: shell, resource: "git rev-parse *", effect: allow }
+  - { action: shell, resource: "git ls-files *", effect: allow }
+  - { action: shell, resource: "git fetch *", effect: allow }
+  - { action: shell, resource: "git pull --ff-only *", effect: allow }
+  - { action: shell, resource: "git add *", effect: allow }
+  - { action: shell, resource: "git commit -m *", effect: allow }
+  - { action: shell, resource: "git switch -c *", effect: allow }
+  - { action: shell, resource: "git switch *", effect: allow }
+  - { action: shell, resource: "git push origin *", effect: allow }
+  - { action: shell, resource: "git merge *", effect: deny }
+  - { action: shell, resource: "git rebase *", effect: deny }
+  - { action: shell, resource: "git cherry-pick *", effect: deny }
+  - { action: shell, resource: "git reset *", effect: deny }
+  - { action: shell, resource: "git revert *", effect: deny }
+  - { action: shell, resource: "git clean *", effect: deny }
+  - { action: shell, resource: "git checkout -- *", effect: deny }
+  - { action: shell, resource: "git checkout .", effect: deny }
+  - { action: shell, resource: "git restore *", effect: deny }
+  - { action: shell, resource: "git stash *", effect: deny }
+  - { action: shell, resource: "git branch -d *", effect: deny }
+  - { action: shell, resource: "git branch -D *", effect: deny }
+  - { action: shell, resource: "git branch -m *", effect: deny }
+  - { action: shell, resource: "git tag *", effect: deny }
+  - { action: shell, resource: "git worktree *", effect: deny }
+  - { action: shell, resource: "git submodule *", effect: deny }
+  - { action: shell, resource: "git config *", effect: deny }
+  - { action: shell, resource: "git gc *", effect: deny }
+  - { action: shell, resource: "git filter-branch *", effect: deny }
+  - { action: shell, resource: "git reflog expire *", effect: deny }
+  - { action: shell, resource: "git switch -f*", effect: deny }
+  - { action: shell, resource: "git switch * -f*", effect: deny }
+  - { action: shell, resource: "git switch --force*", effect: deny }
+  - { action: shell, resource: "git switch * --force*", effect: deny }
+  - { action: shell, resource: "git switch --di*", effect: deny }
+  - { action: shell, resource: "git switch * --di*", effect: deny }
+  - { action: shell, resource: "git switch -C*", effect: deny }
+  - { action: shell, resource: "git switch * -C*", effect: deny }
+  - { action: shell, resource: "git add -A *", effect: deny }
+  - { action: shell, resource: "git add --all*", effect: deny }
+  - { action: shell, resource: "git add --a*", effect: deny }
+  - { action: shell, resource: "git add -p *", effect: deny }
+  - { action: shell, resource: "git add -i *", effect: deny }
+  - { action: shell, resource: "git add --patch*", effect: deny }
+  - { action: shell, resource: "git add --interactive*", effect: deny }
+  - { action: shell, resource: "git add -f*", effect: deny }
+  - { action: shell, resource: "git add * -f*", effect: deny }
+  - { action: shell, resource: "git add .", effect: deny }
+  - { action: shell, resource: "git add . *", effect: deny }
+  - { action: shell, resource: "git commit --amend*", effect: deny }
+  - { action: shell, resource: "git commit * --amend*", effect: deny }
+  - { action: shell, resource: "git commit --no-verify*", effect: deny }
+  - { action: shell, resource: "git commit * --no-verify*", effect: deny }
+  - { action: shell, resource: "git commit * --no-v*", effect: deny }
+  - { action: shell, resource: "git commit * --am*", effect: deny }
+  - { action: shell, resource: "git commit * -n*", effect: deny }
+  - { action: shell, resource: "git commit * --edit*", effect: deny }
+  - { action: shell, resource: "git commit * -e*", effect: deny }
+  - { action: shell, resource: "git commit * -c*", effect: deny }
+  - { action: shell, resource: "git commit * --reedit-message*", effect: deny }
+  - { action: shell, resource: "git push --force*", effect: deny }
+  - { action: shell, resource: "git push -f *", effect: deny }
+  - { action: shell, resource: "git push --delete *", effect: deny }
+  - { action: shell, resource: "git push --mirror *", effect: deny }
+  - { action: shell, resource: "git push --tags", effect: deny }
+  - { action: shell, resource: "git push * -*", effect: deny }
+  - { action: shell, resource: "git push * +*", effect: deny }
+  - { action: shell, resource: "git push * :*", effect: deny }
+  - { action: shell, resource: "git push * main", effect: deny }
+  - { action: shell, resource: "git push * main *", effect: deny }
+  - { action: shell, resource: "git push *:main", effect: deny }
+  - { action: shell, resource: "git push * master", effect: deny }
+  - { action: shell, resource: "git push * master *", effect: deny }
+  - { action: shell, resource: "git push *:master", effect: deny }
+  - { action: shell, resource: "git push * develop", effect: deny }
+  - { action: shell, resource: "git push * develop *", effect: deny }
+  - { action: shell, resource: "git push *:develop", effect: deny }
+  - { action: shell, resource: "git push * test", effect: deny }
+  - { action: shell, resource: "git push * test *", effect: deny }
+  - { action: shell, resource: "git push *:test", effect: deny }
+  - { action: shell, resource: "git push * trunk", effect: deny }
+  - { action: shell, resource: "git push * trunk *", effect: deny }
+  - { action: shell, resource: "git push *:trunk", effect: deny }
+  - { action: shell, resource: "git push * release", effect: deny }
+  - { action: shell, resource: "git push * release *", effect: deny }
+  - { action: shell, resource: "git push *:release", effect: deny }
+  - { action: shell, resource: "git push * refs/*", effect: deny }
+  - { action: shell, resource: "git push origin HEAD", effect: deny }
+  - { action: shell, resource: "git switch -m*", effect: deny }
+  - { action: shell, resource: "git switch * -m*", effect: deny }
+  - { action: shell, resource: "git switch --merge*", effect: deny }
+  - { action: shell, resource: "git switch * --merge*", effect: deny }
+  - { action: shell, resource: "git switch --orphan*", effect: deny }
+  - { action: shell, resource: "git switch * --orphan*", effect: deny }
+  - { action: shell, resource: "git switch --guess*", effect: deny }
+  - { action: shell, resource: "git switch * --guess*", effect: deny }
+  - { action: subagent, resource: "*", effect: deny }
+  - { action: webfetch, resource: "*", effect: deny }
+  - { action: websearch, resource: "*", effect: deny }
 ---
 
 Load `git-policy` with the `skill` tool and follow it.

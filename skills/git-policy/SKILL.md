@@ -21,11 +21,12 @@ Dispatched by `tdd` — the first line of the task is one of:
 
 - `branch.create <branch>`
 - `branch.switch <branch>`
+- `коммит <task-number>`
 - `закрыть <task-number>`
 
 From `tdd` you may operate only on the base branch (`test`, `main`, `develop`) and the task branch.
 
-Manual session — act only on an explicit user command: commit, push, close-out (`закрыть <task-number>`), or `branch.switch <branch>`. The target branch may be any existing branch, including `main`, `test`, and `develop`.
+Manual session — act only on an explicit user command: commit (`коммит <task-number>`), push, close-out (`закрыть <task-number>`), or `branch.switch <branch>`. The target branch may be any existing branch, including `main`, `test`, and `develop`.
 
 ### Branch names
 
@@ -69,6 +70,16 @@ Never merge. The MR to `test`/`develop`/`main` and the merge itself are always m
 - Stage only explicit paths or use `git add -u`. Never use `git add .`, `-A`, `-p`, `-i`, or `-f`.
 - Never use `--amend`, `--no-verify`, `-n`, `-e`, or `-c`.
 - Pre-commit hooks (`lint-staged`, `git-precommit-checks`, `pnpm typecheck`, `vitest run --changed`) must pass. Use a generous timeout and never bypass them. On failure, return `BLOCKED` with the reason.
+
+### Task commit
+
+`коммит <task-number>` means one commit for the work that is already accepted, and nothing else:
+
+1. Stage the explicit paths of the current task, or use `git add -u`.
+2. Commit with Conventional Commits: `<type>: <task-number> <summary>`.
+3. Stop. There is no push here: pushing belongs to `закрыть <task-number>`, and the MR and merge stay manual.
+
+If the tree has nothing to stage, return `DONE` and report that there is nothing to commit.
 
 ### Push
 

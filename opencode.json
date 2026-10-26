@@ -1,16 +1,47 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "default_agent": "plan",
-  "subagent_depth": 2,
   "instructions": ["local.md"],
+  "experimental": {
+    "subagent_depth": 2
+  },
+  "providers": {
+    "openrouter": {
+      "models": {
+        "deepseek/deepseek-v4.1-flash-1017": {
+          "variants": [
+            {
+              "id": "low",
+              "body": {
+                "temperature": 0.1,
+                "reasoning": { "effort": "low" }
+              }
+            },
+            {
+              "id": "high",
+              "body": {
+                "temperature": 0.1,
+                "reasoning": { "effort": "high" }
+              }
+            }
+          ]
+        }
+      }
+    }
+  },
   "mcp": {
-    "figma": {
-      "type": "remote",
-      "url": "https://mcp.figma.com/mcp",
-      "oauth": {
-        "redirectUri": "http://127.0.0.1:19876/callback"
-      },
-      "timeout": 60000
+    "servers": {
+      "figma": {
+        "type": "remote",
+        "url": "https://mcp.figma.com/mcp",
+        "oauth": {
+          "redirect_uri": "http://127.0.0.1:19876/callback"
+        },
+        "timeout": {
+          "catalog": 60000,
+          "execution": 60000
+        }
+      }
     }
   }
 }

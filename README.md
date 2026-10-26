@@ -23,6 +23,22 @@ Agents: `plan`, `build`, `tdd`, `coder`, `test-generator`, `git-manager`.
 Commands: `/plan`, `/tdd`.
 Skills: `architecture`, `build`, `figma`, `git-policy`, `implement`, `plan`, `tdd`, `test-first`, `testing`.
 
+## OpenCode V2
+
+The config targets `opencode 2.1.4` and the native V2 shapes: `permissions` arrays, `shell`/`subagent` actions, `mcp.servers`, and model variants.
+
+- Plugins are `plugins/subagent-watchdog.ts` (`cervart.subagent-watchdog`) and `plugins/agent-config-guard.ts` (`cervart.agent-config-guard`). Both default-export `Plugin.define({ id, setup })` and need the V2 package:
+
+  ```bash
+  cd .opencode && npm i   # @opencode/plugin@2.1.4
+  ```
+
+- `agent-config-guard` provides the `agent_config_check` tool. Its snapshot is bound to the running **process**, not to the plugin load, because V2 reloads plugins on every save — so **any edit under `.opencode/` requires `opencode service restart` before the next subagent dispatch**.
+- `subagent-watchdog` aborts child sessions that stay `busy`/`retry` without activity for 10 minutes. `OPENCODE_SUBAGENT_WATCHDOG=off` disables it; `OPENCODE_SUBAGENT_WATCHDOG_TIMEOUT_MS` overrides the timeout.
+- `experimental.subagent_depth: 2` is required: `tdd` is a subagent that launches `test-generator` and `coder`.
+- Sampling lives in model variants, not in the agent frontmatter. `providers.openrouter.models.*.variants` defines `#temp-low` (temperature `0.1`, reasoning off) plus `#low`/`#high` for DeepSeek, and agents select one with `model: provider/model#variant`.
+- `execute` (Code Mode) is denied for every agent; tools are reached directly.
+
 ## Install
 
 ```bash

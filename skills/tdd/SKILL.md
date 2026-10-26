@@ -1,17 +1,17 @@
 ---
 name: tdd
-description: Use when orchestrating a test-first task: git preparation, contract, tests, red/green coder stages, final review and close-out.
+description: Use when orchestrating a test-first task: git preparation, contract, tests, red/green per plan task with pauses, final review and close-out.
 ---
 
 # TDD orchestration
 
-You coordinate a test-first workflow. The only files you may create or edit are contracts under `.tmp/contracts/**`. Never write production code or tests yourself.
+You coordinate a test-first workflow. The only files you may create or edit are the contract and the progress file under `.tmp/contracts/**`. Never write production code or tests yourself, and never edit the plan.
 
 Read `CODESTYLE.md`, `AGENTS.md`, the relevant files under `docs/`, and the plan before starting.
 
 ## Inputs
 
-- The plan from `.tmp/plans/<slug>.md` or the user's task description.
+- The plan from `.opencode/plans/<slug>.md` or the user's task description.
 - Task number, base branch, and task branch from the plan. If any of them is missing, stop and ask.
 - Initials from `local.md` in the repository root; if missing or invalid, stop and ask.
 
@@ -26,7 +26,7 @@ Before the first dispatch and before **every** later dispatch, call the `agent_c
 - If the tool is unavailable, return `BLOCKED` naming the missing tool.
 - Remember the `agents` map (`agent → model`) so every dispatch can be checked against it.
 
-The guard lives in the running opencode instance: agent files, skills, commands, `AGENTS.md`, `local.md` and root `opencode.json(c)` are snapshotted at startup, so edits to them are not applied until opencode restarts. Dispatch from a stale instance is blocked by the plugin and must be treated as `BLOCKED`, never retried.
+The guard lives in the running opencode instance and its snapshot is bound to the **process**, not to a plugin load: agent files, skills, commands, `AGENTS.md`, `local.md` and root `opencode.json(c)` are snapshotted when the process starts. OpenCode reloads the plugin on every config save without re-taking that snapshot, so edits are not applied until the process restarts. Dispatch from a stale instance is blocked by the plugin and must be treated as `BLOCKED`, never retried.
 
 ### 1. Git preparation
 
@@ -36,9 +36,31 @@ The guard lives in the running opencode instance: agent files, skills, commands,
 4. If `git-manager` returns `BLOCKED`, stop. If it returns `DONE`, verify the current branch and continue.
 5. Without user confirmation, or on a dirty tree, stop.
 
-### 2. Contract
+For a local-only plan (`branch: none`, the files are gitignored) there is nothing to switch or create: check `git status --porcelain` only and continue on the current branch.
 
-Write `.tmp/contracts/<slug>.md` with these sections:
+### 2. Progress file
+
+Read `.tmp/contracts/<slug>.progress.md` before the first task:
+
+- The file is missing → create it with one checkbox per plan task plus `G`, and a `Last:` line.
+- The file exists → compare its task IDs and order with the plan. A mismatch means the plan or the progress file changed behind the run's back: return `BLOCKED` and ask the user which one is authoritative. Never guess and never renumber by hand.
+- Continue from the first unchecked task; never re-run a checked one.
+
+Format:
+
+```md
+# <slug>
+
+- [x] T1 <goal>
+- [ ] T2 <goal>
+- [ ] G git close-out
+
+Last: T1 done, next T2
+```
+
+### 3. Contract
+
+Write `.tmp/contracts/<slug>.md` **once** for the plan, with these sections:
 
 - Behavior
 - API/types
@@ -51,23 +73,35 @@ Write `.tmp/contracts/<slug>.md` with these sections:
 
 The contract must be precise enough for `test-generator` to write tests without guessing selectors, identifiers, or API shapes.
 
-### 3. Tests
+### 4. Task loop
 
-Dispatch `test-generator` with the contract and the list of files it may touch. Review `git diff`, contract compliance, style, and edge cases. Do not proceed to `coder` until the tests are accepted. If the dispatch shows no progress (see “Watchdog and restart”), restart the stage with a narrower scope.
+One iteration handles exactly one task from the plan section `Tasks`. A plan without a `Tasks` section is a single task for the whole plan (legacy fallback).
 
-### 4. Red
+For each task:
 
-Dispatch `coder` for stage 1. Verify that the tests fail on assertions, not on import or type errors. Run `pnpm lint` and `pnpm typecheck`. If the failure is an import/type error, send the coder back to fix the skeleton. If the dispatch shows no progress, apply “Watchdog and restart”.
+1. Call `agent_config_check` (step 0) and stop on any blocking result.
+2. Tests: dispatch `test-generator` with the contract, the task, and the list of files it may touch. Review `git diff`, contract compliance, style, and edge cases. Do not proceed to `coder` until the tests are accepted. For Markdown and config tasks with `tests: existing suite / manual check` skip this dispatch.
+3. Red: dispatch `coder` for stage 1 (skeleton). Verify that the tests fail on assertions, not on import or type errors. Run `pnpm lint` and `pnpm typecheck`. If the failure is an import/type error, send the coder back to fix the skeleton.
+4. Green: dispatch a fresh `coder` session for stage 2. Verify with the task `verify` commands plus `pnpm exec vitest run <paths>`, `pnpm lint`, and `pnpm typecheck`.
+5. Mark the task as done in the progress file and update the `Last:` line.
+6. **Pause and report** «сделано / осталось / следующая». Continue with the next task only on an explicit «продолжи» from the user.
 
-### 5. Green
+A task is accepted only when its own `verify` passes. `pnpm build` and the full `pnpm test` belong to the final review, not to every task.
 
-Dispatch a fresh `coder` session for stage 2. Verify with `pnpm exec vitest run <paths>`, `pnpm lint`, and `pnpm build`. If the dispatch shows no progress, apply “Watchdog and restart”.
+If a dispatch shows no progress, apply “Watchdog and restart”.
 
-### 6. Final review and close-out
+### 5. Final review and close-out
 
-Review `git diff` against the task and the contract, check the architecture, and make sure the tests were not adjusted to fit the implementation.
+Review `git diff` against the plan and the contract, check the architecture, and make sure the tests were not adjusted to fit the implementation. Run the plan-wide checks: `pnpm build` and `pnpm test`.
 
-Before close-out, ask the user explicitly. Only after explicit confirmation, dispatch `git-manager` with the first line `закрыть <task-number>`. Close-out is commit plus push of the task branch, never a merge. Remind the user that the MR and merge are manual.
+Before close-out, ask the user explicitly. Only after explicit confirmation:
+
+1. Dispatch `git-manager` with `коммит <task-number>` for every pending commit group of the plan's `commits` field.
+2. Dispatch `git-manager` with the first line `закрыть <task-number>`.
+
+Close-out is commit plus push of the task branch, never a merge. A `коммит` never pushes. Remind the user that the MR and merge are manual.
+
+For a local-only plan (`branch: none`, gitignored files) the task `G: git close-out` is only a `git status` check in every affected repository, and `tdd` makes no commit.
 
 ## Watchdog and restart
 
@@ -90,7 +124,7 @@ While `tdd` runs, its own child sessions keep it alive: activity of a child refr
 
 ## Output
 
-`DONE` or `BLOCKED` with a short summary of the contract, the tests, the red/green results, and the exact commands run. Answer the user in Russian.
+`DONE` or `BLOCKED` with a short summary of the contract, the tasks processed, the red/green results, and the exact commands run. Answer the user in Russian.
 
 ## BLOCKED
 
@@ -101,7 +135,8 @@ While `tdd` runs, its own child sessions keep it alive: activity of a child refr
 - A stage was aborted by the watchdog twice without progress (“watchdog прервал дважды без прогресса”).
 - `agent_config_check` reports `fresh !== true` («конфиг агентов изменён после старта opencode — перезапусти сервер»), a guarded agent appears in `missingModel`, or the tool is unavailable.
 - The contract lacks a symbol, identifier, or selector that the tests need.
+- The progress file and the plan disagree on task IDs or order.
 
 ## Out of scope
 
-Writing production code or tests, editing configuration, running the full `pnpm test` or coverage, committing, pushing, switching branches, merging, rebasing, cherry-picking, opening or merging an MR. Test rules are in the `testing` skill.
+Writing production code or tests, editing the plan or the application configuration, running the full `pnpm test` or coverage per task, pushing inside `коммит`, switching branches, merging, rebasing, cherry-picking, opening or merging an MR. Test rules are in the `testing` skill.

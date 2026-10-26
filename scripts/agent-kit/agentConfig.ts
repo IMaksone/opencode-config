@@ -45,6 +45,31 @@ function isAgentKey(key: string): key is (typeof AGENTS_KEYS)[number] {
   return (AGENTS_KEYS as readonly string[]).includes(key);
 }
 
+/**
+ * Split a V2 model reference (`provider/model#variant`) into its parts. V1 kept
+ * the variant in a separate `variant` key; both shapes are accepted.
+ */
+export function splitModelReference(value: string): { model: string; variant?: string } {
+  const hash = value.indexOf('#');
+
+  if (hash <= 0) {
+    return { model: value };
+  }
+
+  const variant = value.slice(hash + 1).trim();
+
+  return { model: value.slice(0, hash), variant: variant === '' ? undefined : variant };
+}
+
+/** Full `provider/model#variant` reference for output and logs. */
+export function formatModel(info: AgentModelInfo | undefined): string | undefined {
+  if (!info?.model) {
+    return undefined;
+  }
+
+  return info.variant ? `${info.model}#${info.variant}` : info.model;
+}
+
 function unquote(value: string): string {
   if (value.length < 2) {
     return value;
@@ -110,6 +135,7 @@ export function parseAgentFrontmatter(markdown: string): AgentModelInfo {
   }
 
   const info: AgentModelInfo = {};
+  let inlineVariant: string | undefined;
 
   for (const line of lines.slice(1, end)) {
     if (line.trim() === '' || /^\s/.test(line)) {
@@ -129,7 +155,25 @@ export function parseAgentFrontmatter(markdown: string): AgentModelInfo {
       continue;
     }
 
-    info[key] = unquote(rawValue);
+    const value = unquote(rawValue);
+
+    if (key === 'model') {
+      const reference = splitModelReference(value);
+
+      info.model = reference.model;
+      inlineVariant = reference.variant;
+
+      continue;
+    }
+
+    info[key] = value;
+  }
+
+  // V1 files keep the variant in its own key; V2 joins it to the model.
+  info.variant ??= inlineVariant;
+
+  if (info.variant === undefined) {
+    delete info.variant;
   }
 
   return info;

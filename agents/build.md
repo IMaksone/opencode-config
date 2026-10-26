@@ -1,56 +1,102 @@
 ---
 description: Сборка и проверки: lint, typecheck, build, tests без суб-агентов
 mode: all
-model: openrouter/deepseek/deepseek-v4.1-flash-1017
-temperature: 0.1
+model: openrouter/deepseek/deepseek-v4.1-flash-1017#high
 steps: 120
-permission:
-  edit:
-    "*": allow
-    ".env*": deny
-    "**/.env*": deny
-    "*.local": deny
-    "**/*.local": deny
-    ".git/**": deny
-    "**/.git/**": deny
-    ".husky/**": deny
-    "**/.husky/**": deny
-  bash:
-    "*": deny
-    ls: allow
-    "ls *": allow
-    cat: allow
-    "cat *": allow
-    grep: allow
-    "grep *": allow
-    head: allow
-    "head *": allow
-    rg: allow
-    "rg *": allow
-    tail: allow
-    "tail *": allow
-    wc: allow
-    "wc *": allow
-    "git status": allow
-    "git status *": allow
-    "git diff": allow
-    "git diff *": allow
-    "git log": allow
-    "git log *": allow
-    "git show": allow
-    "git show *": allow
-    "git branch --show-current": allow
-    "pnpm lint": allow
-    "pnpm lint-fix": allow
-    "pnpm typecheck": allow
-    "pnpm build": allow
-    "pnpm test": allow
-    "pnpm test-coverage": allow
-    "pnpm exec vitest *": allow
-    "pnpm exec eslint *": allow
-  task: deny
-  webfetch: deny
-  websearch: deny
+permissions:
+  - action: execute
+    resource: "*"
+    effect: deny
+  - action: edit
+    resource: "*"
+    effect: allow
+  - action: edit
+    resource: ".env*"
+    effect: deny
+  - action: edit
+    resource: "*.env*"
+    effect: deny
+  - action: edit
+    resource: "*.local"
+    effect: deny
+  - action: edit
+    resource: ".git/*"
+    effect: deny
+  - action: edit
+    resource: ".husky/*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "cat *"
+    effect: allow
+  - action: shell
+    resource: "grep *"
+    effect: allow
+  - action: shell
+    resource: "head *"
+    effect: allow
+  - action: shell
+    resource: "ls *"
+    effect: allow
+  - action: shell
+    resource: "rg *"
+    effect: allow
+  - action: shell
+    resource: "tail *"
+    effect: allow
+  - action: shell
+    resource: "wc *"
+    effect: allow
+  - action: shell
+    resource: "git status *"
+    effect: allow
+  - action: shell
+    resource: "git diff *"
+    effect: allow
+  - action: shell
+    resource: "git log *"
+    effect: allow
+  - action: shell
+    resource: "git show *"
+    effect: allow
+  - action: shell
+    resource: "git branch --show-current"
+    effect: allow
+  - action: shell
+    resource: "pnpm lint"
+    effect: allow
+  - action: shell
+    resource: "pnpm lint-fix"
+    effect: allow
+  - action: shell
+    resource: "pnpm typecheck"
+    effect: allow
+  - action: shell
+    resource: "pnpm build"
+    effect: allow
+  - action: shell
+    resource: "pnpm test"
+    effect: allow
+  - action: shell
+    resource: "pnpm test-coverage"
+    effect: allow
+  - action: shell
+    resource: "pnpm exec vitest *"
+    effect: allow
+  - action: shell
+    resource: "pnpm exec eslint *"
+    effect: allow
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: webfetch
+    resource: "*"
+    effect: deny
+  - action: websearch
+    resource: "*"
+    effect: deny
 ---
 
 Load `build` with the `skill` tool and follow it.

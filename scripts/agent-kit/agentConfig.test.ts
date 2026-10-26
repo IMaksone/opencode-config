@@ -8,9 +8,11 @@ import {
   aggregateAgents,
   collectConfigFiles,
   diffSnapshot,
+  formatModel,
   missingModel,
   parseAgentFrontmatter,
   snapshot,
+  splitModelReference,
 } from './agentConfig';
 
 const temporaryRoots: string[] = [];
@@ -83,6 +85,58 @@ describe('parseAgentFrontmatter', () => {
     const markdown = ['---', 'model: "openrouter/demo"', 'variant: \'low\'', '---'].join('\n');
 
     expect(parseAgentFrontmatter(markdown)).toEqual({ model: 'openrouter/demo', variant: 'low' });
+  });
+
+  it('splits the V2 variant suffix into model and variant', () => {
+    const markdown = ['---', 'model: openrouter/z-ai/glm-5.3#temp-low', '---'].join('\n');
+
+    expect(parseAgentFrontmatter(markdown)).toEqual({
+      model: 'openrouter/z-ai/glm-5.3',
+      variant: 'temp-low',
+    });
+  });
+
+  it('keeps the explicit variant key of a mixed V1 and V2 frontmatter', () => {
+    const markdown = [
+      '---',
+      'description: demo',
+      'model: openrouter/deepseek/deepseek-v4.1-flash-1017#low',
+      'variant: high',
+      'mode: subagent',
+      'temperature: 0.1',
+      'permissions:',
+      '  - action: edit',
+      '    resource: "*"',
+      '    effect: deny',
+      '---',
+    ].join('\n');
+
+    expect(parseAgentFrontmatter(markdown)).toEqual({
+      model: 'openrouter/deepseek/deepseek-v4.1-flash-1017',
+      mode: 'subagent',
+      variant: 'high',
+    });
+  });
+
+  it('ignores a trailing hash without a variant name', () => {
+    expect(parseAgentFrontmatter(['---', 'model: openrouter/demo#', '---'].join('\n')))
+      .toEqual({ model: 'openrouter/demo' });
+  });
+});
+
+describe('model references', () => {
+  it('splits a reference with and without a variant', () => {
+    expect(splitModelReference('openrouter/xiao/mimo#temp-low'))
+      .toEqual({ model: 'openrouter/xiao/mimo', variant: 'temp-low' });
+    expect(splitModelReference('openrouter/xiao/mimo')).toEqual({ model: 'openrouter/xiao/mimo' });
+    expect(splitModelReference('#low')).toEqual({ model: '#low' });
+  });
+
+  it('formats the full reference back', () => {
+    expect(formatModel({ model: 'openrouter/demo', variant: 'high' })).toBe('openrouter/demo#high');
+    expect(formatModel({ model: 'openrouter/demo' })).toBe('openrouter/demo');
+    expect(formatModel({})).toBeUndefined();
+    expect(formatModel(undefined)).toBeUndefined();
   });
 });
 

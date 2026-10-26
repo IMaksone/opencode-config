@@ -15,20 +15,22 @@ Two independent paths. For view-only files use the read-only REST dump; MCP tool
 ## Process
 
 1. Determine access. If you have edit access, the remote MCP is available; otherwise use the dump.
-2. **MCP path.** The `figma` server is configured in the tracked project `.opencode/opencode.json` (`mcp.figma`), not in a personal global config:
+2. **MCP path.** The `figma` server is configured in the tracked project `.opencode/opencode.json` (`mcp.servers.figma`), not in a personal global config:
 
 ```json
 "mcp": {
-  "figma": {
-    "type": "remote",
-    "url": "https://mcp.figma.com/mcp",
-    "oauth": { "redirectUri": "http://127.0.0.1:19876/callback" },
-    "timeout": 60000
+  "servers": {
+    "figma": {
+      "type": "remote",
+      "url": "https://mcp.figma.com/mcp",
+      "oauth": { "redirect_uri": "http://127.0.0.1:19876/callback" },
+      "timeout": { "catalog": 60000, "execution": 60000 }
+    }
   }
 }
 ```
 
-The single-segment `/callback` is required: Figma's DCR endpoint rejects the default nested path (`400 invalid_redirect_uri`). Authorize with `opencode mcp auth figma`, check with `opencode mcp auth list`, diagnose with `opencode mcp debug figma`. The OAuth window waits about 5 minutes. 3. **Dump path.** Export a personal access token with the `file_content:read` scope as `FIGMA_API_KEY` in the shell profile, then:
+The single-segment `/callback` is required: Figma's DCR endpoint rejects the default nested path (`400 invalid_redirect_uri`). Sign in from the client with `/mcps` → `figma` → sign in; check the configured servers with `opencode mcp list`. The OAuth window waits about 5 minutes. 3. **Dump path.** Export a personal access token with the `file_content:read` scope as `FIGMA_API_KEY` in the shell profile, then:
 
 ```bash
 node .opencode/scripts/figma-dump.js 'https://www.figma.com/design/<fileKey>/Name?node-id=22-100'
@@ -42,7 +44,7 @@ Files land in `.tmp/figma/` as `<fileKey>-<nodeId>.{json,md,png}` (`22:100` beco
 - Never commit `FIGMA_API_KEY` and never put it into `.env*`, `*.local`, or repository config. The token lives only in the shell profile.
 - `.tmp/figma/**` is gitignored; do not add dumps to git.
 - Read `.tmp/figma/**` with the regular read tools; no extra permissions are needed.
-- MCP tools are not `webfetch`/`websearch`, so the agent's web rules stay as configured (the `plan` profile allows web, the others deny it). Tool names are `<server>_<tool>`, for example `figma_get_metadata`. If a tool is blocked, add a rule to the agent's `permission`, not to the web rules.
+- MCP tools are not `webfetch`/`websearch`, so the agent's web rules stay as configured (the `plan` profile allows web, the others deny it). Tool names are `<server>_<tool>`, for example `figma_get_metadata`. If a tool is blocked, add a rule to the agent's `permissions`, not to the web rules.
 - Start from the `.md` tree; use `figma_get_metadata` for structure and `figma_get_design_context` only for the node being implemented.
 - The `mcp` block lives in the tracked `.opencode/opencode.json`; change it only in a dedicated config task with the user's confirmation.
 
