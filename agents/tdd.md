@@ -1,7 +1,7 @@
 ---
 description: TDD-оркестратор: контракт, тесты, red/green по задачам плана, паузы с отчётом, git close-out
 mode: all
-model: openrouter/z-ai/glm-5.3
+model: zai-coding-plan/glm-5.3
 steps: 90
 permissions:
   - action: execute
@@ -83,6 +83,9 @@ permissions:
     resource: "*"
     effect: deny
   - action: websearch
+    resource: "*"
+    effect: deny
+  - action: delete
     resource: "*"
     effect: deny
 ---

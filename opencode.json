@@ -5,6 +5,13 @@
   "experimental": {
     "subagent_depth": 2
   },
+  "permissions": [
+    {
+      "action": "delete",
+      "resource": "*",
+      "effect": "deny"
+    }
+  ],
   "providers": {
     "openrouter": {
       "models": {

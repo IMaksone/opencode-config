@@ -1,7 +1,7 @@
 ---
 description: Git-менеджер: ветки, коммиты, push; без merge/rebase/cherry-pick
 mode: all
-model: openrouter/deepseek/deepseek-v4.1-flash-1017#low
+model: zai-coding-plan/glm-5.3-flash
 steps: 60
 permissions:
   - { action: execute, resource: "*", effect: deny }
@@ -120,6 +120,7 @@ permissions:
   - { action: subagent, resource: "*", effect: deny }
   - { action: webfetch, resource: "*", effect: deny }
   - { action: websearch, resource: "*", effect: deny }
+  - { action: delete, resource: "*", effect: deny }
 ---
 
 Load `git-policy` with the `skill` tool and follow it.

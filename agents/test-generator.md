@@ -67,6 +67,9 @@ permissions:
   - action: websearch
     resource: "*"
     effect: deny
+  - action: delete
+    resource: "*"
+    effect: deny
 ---
 
 Load `test-first` with the `skill` tool and follow it.

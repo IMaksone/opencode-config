@@ -1,7 +1,7 @@
 ---
 description: Разработчик: реализует production-код по контракту до green
 mode: subagent
-model: openrouter/deepseek/deepseek-v4.1-flash-1017#low
+model: zai-coding-plan/glm-5.3-flash
 steps: 120
 permissions:
   - action: execute
@@ -28,6 +28,30 @@ permissions:
   - action: edit
     resource: "src/shared/api/testing/*"
     effect: deny
+  - action: delete
+    resource: "*"
+    effect: deny
+  - action: delete
+    resource: "src/*.ts"
+    effect: allow
+  - action: delete
+    resource: "src/*.tsx"
+    effect: allow
+  - action: delete
+    resource: "src/*.test.ts"
+    effect: ask
+  - action: delete
+    resource: "src/*.test.tsx"
+    effect: ask
+  - action: delete
+    resource: "src/*.testHelpers.ts"
+    effect: ask
+  - action: delete
+    resource: "src/shared/testing/*"
+    effect: ask
+  - action: delete
+    resource: "src/shared/api/testing/*"
+    effect: ask
   - action: shell
     resource: "*"
     effect: deny

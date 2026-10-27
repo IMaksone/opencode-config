@@ -11,7 +11,7 @@ Read `CODESTYLE.md`, `AGENTS.md`, the relevant files under `docs/`, and the plan
 
 ## Inputs
 
-- The plan from `.opencode/plans/<slug>.md` or the user's task description.
+- The plan from `<project root>/.opencode/plans/<slug>.md` or the user's task description.
 - Task number, base branch, and task branch from the plan. If any of them is missing, stop and ask.
 - Initials from `local.md` in the repository root; if missing or invalid, stop and ask.
 
@@ -85,6 +85,8 @@ For each task:
 4. Green: dispatch a fresh `coder` session for stage 2. Verify with the task `verify` commands plus `pnpm exec vitest run <paths>`, `pnpm lint`, and `pnpm typecheck`.
 5. Mark the task as done in the progress file and update the `Last:` line.
 6. **Pause and report** «сделано / осталось / следующая». Continue with the next task only on an explicit «продолжи» from the user.
+
+When a task includes file deletions, pass their exact list from the plan to the `coder` prompt with the instruction «удалить инструментом `delete_file`; shell `rm` запрещён». For test-file deletions (`*.test.ts`, `*.test.tsx`, `*.testHelpers.ts`, `src/shared/testing/**`, `src/shared/api/testing/**`) carry the plan's mark that the user confirms each deletion through the tool's ask-prompt; a user refusal makes the task `BLOCKED`. `tdd` never deletes anything itself.
 
 A task is accepted only when its own `verify` passes. `pnpm build` and the full `pnpm test` belong to the final review, not to every task.
 

@@ -30,6 +30,15 @@ Read `CODESTYLE.md`, `AGENTS.md`, the relevant files under `docs/`, the contract
 - Run `pnpm lint`, `pnpm build`, and the focused tests.
 - Do not adjust the tests to make the implementation pass.
 
+## Deletions
+
+Delete files only when the task explicitly lists them, and only with the `delete_file` tool:
+
+- Shell `rm`, `git rm`, and writing an empty file instead of a deletion are forbidden.
+- The deletion list comes from the plan through `@tdd`; `coder` never picks files itself. A file outside the list → `BLOCKED` and return the requirement to `@tdd`.
+- Test files (`*.test.ts`, `*.test.tsx`, `*.testHelpers.ts`, `src/shared/testing/**`, `src/shared/api/testing/**`) may be deleted only when the task explicitly allows it — the tool asks the user to confirm every such deletion.
+- After a deletion, clean up the imports and exports it orphans so the task stays green.
+
 ## Output
 
 `DONE` or `BLOCKED` with a short summary of the changes, the exact commands run, and their results. Answer the user in Russian.

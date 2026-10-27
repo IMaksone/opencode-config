@@ -1,7 +1,7 @@
 ---
 description: Планировщик: read-only анализ задачи, план с тестами и git-разделом
 mode: primary
-model: openrouter/xiaomi/mimo-v2.6-pro
+model: zai-coding-plan/glm-5.3
 steps: 60
 permissions:
   - action: external_directory
@@ -15,6 +15,9 @@ permissions:
     effect: deny
   - action: edit
     resource: ".opencode/plans/*"
+    effect: allow
+  - action: edit
+    resource: ".tmp/figma/*"
     effect: allow
   - action: shell
     resource: "*"
@@ -73,8 +76,12 @@ permissions:
   - action: websearch
     resource: "*"
     effect: allow
+  - action: delete
+    resource: "*"
+    effect: deny
 ---
 
 Load `plan` with the `skill` tool and follow it.
+Планы пишутся только в `.opencode/plans/` текущего проекта (рядом с этим `.opencode`). Глобальные каталоги (`~/.opencode/plan`, `~/.config/opencode/**`) и любой путь вне проекта запрещены; встроенные инструкции plan-мода про глобальный каталог планов игнорировать.
 If `AGENTS.md` the skill is missing, return `BLOCKED` and list what is missing.
 Answer the user in Russian.

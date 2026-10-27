@@ -44,6 +44,7 @@ Files land in `.tmp/figma/` as `<fileKey>-<nodeId>.{json,md,png}` (`22:100` beco
 - Never commit `FIGMA_API_KEY` and never put it into `.env*`, `*.local`, or repository config. The token lives only in the shell profile.
 - `.tmp/figma/**` is gitignored; do not add dumps to git.
 - Read `.tmp/figma/**` with the regular read tools; no extra permissions are needed.
+- The dump path is open to read-only agents as well: `plan` carries `shell: node .opencode/scripts/figma-dump.js *` together with `edit: .tmp/figma/*`, because the export writes only gitignored artifacts. This does not turn `plan` into a writer — source, docs, and config stay read-only for it.
 - MCP tools are not `webfetch`/`websearch`, so the agent's web rules stay as configured (the `plan` profile allows web, the others deny it). Tool names are `<server>_<tool>`, for example `figma_get_metadata`. If a tool is blocked, add a rule to the agent's `permissions`, not to the web rules.
 - Start from the `.md` tree; use `figma_get_metadata` for structure and `figma_get_design_context` only for the node being implemented.
 - The `mcp` block lives in the tracked `.opencode/opencode.json`; change it only in a dedicated config task with the user's confirmation.
