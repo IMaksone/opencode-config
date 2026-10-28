@@ -50,13 +50,25 @@ permissions:
     resource: "wc *"
     effect: allow
   - action: shell
-    resource: "pnpm lint"
+    resource: "pnpm lint *"
     effect: allow
   - action: shell
-    resource: "pnpm typecheck"
+    resource: "pnpm exec eslint *"
+    effect: allow
+  - action: shell
+    resource: "pnpm typecheck *"
     effect: allow
   - action: shell
     resource: "pnpm exec vitest run *"
+    effect: allow
+  - action: shell
+    resource: "pnpm exec tsc *"
+    effect: allow
+  - action: shell
+    resource: "pnpm run lint"
+    effect: allow
+  - action: shell
+    resource: "pnpm run typecheck"
     effect: allow
   - action: subagent
     resource: "*"

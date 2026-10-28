@@ -55,7 +55,7 @@ Format:
 - [ ] T2 <goal>
 - [ ] G git close-out
 
-Last: T1 done, next T2
+Last: T1 done+committed, next T2
 ```
 
 ### 3. Contract
@@ -77,14 +77,22 @@ The contract must be precise enough for `test-generator` to write tests without 
 
 One iteration handles exactly one task from the plan section `Tasks`. A plan without a `Tasks` section is a single task for the whole plan (legacy fallback).
 
+Run every verify command as a single simple shell call without wrappers (`cd`, pipes, redirects, `echo` probes). The permission scanner checks a compound command part by part: every part must be explicitly allowed, so one unknown variant or wrapper rejects the whole call. Split an `&&` chain from the plan into separate calls instead of wrapping or filtering its output.
+
 For each task:
 
 1. Call `agent_config_check` (step 0) and stop on any blocking result.
 2. Tests: dispatch `test-generator` with the contract, the task, and the list of files it may touch. Review `git diff`, contract compliance, style, and edge cases. Do not proceed to `coder` until the tests are accepted. For Markdown and config tasks with `tests: existing suite / manual check` skip this dispatch.
 3. Red: dispatch `coder` for stage 1 (skeleton). Verify that the tests fail on assertions, not on import or type errors. Run `pnpm lint` and `pnpm typecheck`. If the failure is an import/type error, send the coder back to fix the skeleton.
 4. Green: dispatch a fresh `coder` session for stage 2. Verify with the task `verify` commands plus `pnpm exec vitest run <paths>`, `pnpm lint`, and `pnpm typecheck`.
+   Optional live check (UI-changing tasks only, and only when the user has already started the dev server): after green, run `browser_browser_navigate` to `http://localhost:3000<route>` (the dev port is pinned by `vite.config.ts`, `strictPort`; `5173`/`4173` never exist here — the `browser-guard` plugin denies them), then `browser_browser_snapshot` / `browser_browser_find` for the expected elements and `browser_browser_console_messages` for new errors versus the baseline (React DevTools INFO banner; `GET .../auth/me 401` pairs during session start/expiry). Never start the dev server yourself, never enter Keycloak credentials — the manual login belongs to the user. One snapshot per check. If the dev server is not running, skip the live check; it is not blocking.
 5. Mark the task as done in the progress file and update the `Last:` line.
-6. **Pause and report** «сделано / осталось / следующая». Continue with the next task only on an explicit «продолжи» from the user.
+6. **Pause, report, commit**: report «сделано / осталось / следующая» and end with «закоммитить T<n> и продолжаем?». Only on an explicit «продолжи»:
+   1. dispatch `git-manager` with the first line `коммит <task-number>`, passing the task's `commit:` message and its explicit paths from the plan — stage exactly those paths;
+   2. on `DONE` continue with the next task; on `BLOCKED` (for example a failed pre-commit hook) stop and report — the next task never starts on an uncommitted tree;
+   3. for a local-only plan (`branch: none`) skip the dispatch — there is nothing to commit.
+
+   Any other reply keeps the run paused.
 
 When a task includes file deletions, pass their exact list from the plan to the `coder` prompt with the instruction «удалить инструментом `delete_file`; shell `rm` запрещён». For test-file deletions (`*.test.ts`, `*.test.tsx`, `*.testHelpers.ts`, `src/shared/testing/**`, `src/shared/api/testing/**`) carry the plan's mark that the user confirms each deletion through the tool's ask-prompt; a user refusal makes the task `BLOCKED`. `tdd` never deletes anything itself.
 
@@ -94,14 +102,13 @@ If a dispatch shows no progress, apply “Watchdog and restart”.
 
 ### 5. Final review and close-out
 
-Review `git diff` against the plan and the contract, check the architecture, and make sure the tests were not adjusted to fit the implementation. Run the plan-wide checks: `pnpm build` and `pnpm test`.
+Review the committed work against the plan and the contract — `git diff <base>...HEAD` on the task branch — check the architecture, and make sure the tests were not adjusted to fit the implementation. Run the plan-wide checks: `pnpm build` and `pnpm test`.
 
-Before close-out, ask the user explicitly. Only after explicit confirmation:
+Every task was committed at its own pause, so the tree must be clean here. A dirty tree means an unaccepted leftover: return `BLOCKED` with the paths.
 
-1. Dispatch `git-manager` with `коммит <task-number>` for every pending commit group of the plan's `commits` field.
-2. Dispatch `git-manager` with the first line `закрыть <task-number>`.
+Before close-out, ask the user explicitly. Only after explicit confirmation dispatch `git-manager` with the first line `закрыть <task-number>` (it commits leftovers if the tree is dirty, then pushes the task branch).
 
-Close-out is commit plus push of the task branch, never a merge. A `коммит` never pushes. Remind the user that the MR and merge are manual.
+Close-out is push of the task branch, never a merge. Remind the user that the MR and merge are manual.
 
 For a local-only plan (`branch: none`, gitignored files) the task `G: git close-out` is only a `git status` check in every affected repository, and `tdd` makes no commit.
 

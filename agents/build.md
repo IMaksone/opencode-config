@@ -65,28 +65,43 @@ permissions:
     resource: "git branch --show-current"
     effect: allow
   - action: shell
-    resource: "pnpm lint"
+    resource: "pnpm lint *"
     effect: allow
   - action: shell
-    resource: "pnpm lint-fix"
+    resource: "pnpm lint-fix *"
     effect: allow
   - action: shell
-    resource: "pnpm typecheck"
+    resource: "pnpm typecheck *"
     effect: allow
   - action: shell
-    resource: "pnpm build"
+    resource: "pnpm build *"
     effect: allow
   - action: shell
-    resource: "pnpm test"
+    resource: "pnpm test *"
     effect: allow
   - action: shell
-    resource: "pnpm test-coverage"
+    resource: "pnpm test-coverage *"
     effect: allow
   - action: shell
     resource: "pnpm exec vitest *"
     effect: allow
   - action: shell
     resource: "pnpm exec eslint *"
+    effect: allow
+  - action: shell
+    resource: "pnpm exec tsc *"
+    effect: allow
+  - action: shell
+    resource: "pnpm run lint"
+    effect: allow
+  - action: shell
+    resource: "pnpm run typecheck"
+    effect: allow
+  - action: shell
+    resource: "pnpm run build"
+    effect: allow
+  - action: shell
+    resource: "pnpm run test"
     effect: allow
   - action: subagent
     resource: "*"
@@ -100,6 +115,54 @@ permissions:
   - action: delete
     resource: "*"
     effect: deny
+  - action: browser_*
+    resource: "*"
+    effect: deny
+  - action: browser_browser_navigate
+    resource: "*"
+    effect: allow
+  - action: browser_browser_navigate_back
+    resource: "*"
+    effect: allow
+  - action: browser_browser_snapshot
+    resource: "*"
+    effect: allow
+  - action: browser_browser_find
+    resource: "*"
+    effect: allow
+  - action: browser_browser_click
+    resource: "*"
+    effect: allow
+  - action: browser_browser_hover
+    resource: "*"
+    effect: allow
+  - action: browser_browser_type
+    resource: "*"
+    effect: allow
+  - action: browser_browser_press_key
+    resource: "*"
+    effect: allow
+  - action: browser_browser_select_option
+    resource: "*"
+    effect: allow
+  - action: browser_browser_fill_form
+    resource: "*"
+    effect: allow
+  - action: browser_browser_wait_for
+    resource: "*"
+    effect: allow
+  - action: browser_browser_console_messages
+    resource: "*"
+    effect: allow
+  - action: browser_browser_network_requests
+    resource: "*"
+    effect: allow
+  - action: browser_browser_network_request
+    resource: "*"
+    effect: allow
+  - action: browser_browser_tabs
+    resource: "*"
+    effect: allow
 ---
 
 Load `build` with the `skill` tool and follow it.

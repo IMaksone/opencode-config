@@ -13,6 +13,8 @@ permissions:
   - { action: shell, resource: "tail *", effect: allow }
   - { action: shell, resource: "rg *", effect: allow }
   - { action: shell, resource: "wc *", effect: allow }
+  - { action: shell, resource: "pnpm lint", effect: allow }
+  - { action: shell, resource: "pnpm exec eslint", effect: allow }
   - { action: shell, resource: "git status *", effect: allow }
   - { action: shell, resource: "git diff *", effect: allow }
   - { action: shell, resource: "git log *", effect: allow }

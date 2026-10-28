@@ -61,6 +61,12 @@ permissions:
   - action: shell
     resource: "node .opencode/scripts/figma-dump.js *"
     effect: allow
+  - action: shell
+    resource: "pnpm lint"
+    effect: allow
+  - action: shell
+    resource: "pnpm exec eslint"
+    effect: allow
   - action: subagent
     resource: "*"
     effect: deny

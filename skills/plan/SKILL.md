@@ -33,7 +33,7 @@ Read `CODESTYLE.md`, `AGENTS.md`, and the relevant files under `docs/` before pl
 
 - **Goal**
 - **Affected files**
-- **Tasks** — the plan is a list of tasks `T1…Tn`, executed one per `tdd` iteration. Each task carries `id`, `goal`, `affected files`, `steps`, `tests`, and `verify`.
+- **Tasks** — the plan is a list of tasks `T1…Tn`, executed one per `tdd` iteration. Each task carries `id`, `goal`, `affected files`, `steps`, `tests`, `verify`, and `commit`.
 - **Risks**
 - **Tests** — the TDD order shared by the whole plan and the focused commands; per-task expectations live inside each task
 - **Contract data** — behavior, API/types, errors, UI/selectors, state/URL, fixtures/MSW, test identifiers, out of scope
@@ -47,12 +47,12 @@ The Git section must contain:
 - `tree`: `clean`, a list of paths, or `unknown`.
 - `sync`: `on` by default; `off` only with a written reason.
 - `switch`: only through `git-manager` after explicit user confirmation; `plan` never runs git write commands.
-- `commits`: `per-task` (one commit per task), `single` (one commit for the whole plan), or `groups` with the groups listed. A commit never includes a push.
-- `commit/push`: only manually through `git-manager` or through a confirmed close-out.
+- `commits`: `per-task` — the only mode. Each task is committed individually right after the user confirms the task result («продолжи» at the task pause); no commit is deferred to the close-out. A commit never includes a push.
+- `commit/push`: the commit of each task goes through `git-manager` at the task pause, with the task's `commit:` message and paths; push only through the confirmed close-out (`G`).
 - `merge/MR`: manual only.
 - `initials` and `task number`.
 
-The mandatory `G: git close-out` task closes the plan. For a local-only plan (`branch: none`, the files are gitignored) `G` is a `git status` check in every affected repository and no commit is made.
+The mandatory `G: git close-out` task closes the plan: final review, the plan-wide checks, then `закрыть <task-number>` after explicit user confirmation. Every task is already committed at its own pause, so `G` expects a clean tree; a dirty tree at `G` is `BLOCKED` with the leftover paths. For a local-only plan (`branch: none`, the files are gitignored) `G` is a `git status` check in every affected repository and no commit is made.
 
 ## Tasks
 
@@ -61,7 +61,7 @@ Granularity follows volume and complexity, not the number of files:
 - Work that mechanically touches one or two files stays in one task.
 - Risky work — data migrations, permission or config changes, public API edits — is split finer.
 - A trivial change is a single task; do not invent tasks to look thorough.
-- Every task leaves the tree green on its own: its `verify` passes before the next task starts.
+- Every task leaves the tree green and committed on its own: its `verify` passes and its commit lands before the next task starts.
 - The task list ends with the mandatory close-out task `G: git close-out`.
 
 Each task is written as:
@@ -73,9 +73,10 @@ Each task is written as:
 - steps: <small, ordered, no placeholders>
 - tests: <what to test, or `existing suite` / `manual check` for config and docs>
 - verify: <exact commands, e.g. `pnpm exec vitest run src/entities/wells/helper.test.ts`, `pnpm lint`, `pnpm typecheck`>
+- commit: `<type>: <task-number> <summary>` — Conventional Commits subject; `git-manager` stages exactly this task's affected files
 ```
 
-Autotests are not required for Markdown and config tasks: `tests: existing suite / manual check` plus a `verify` line is enough.
+Autotests are not required for Markdown and config tasks: `tests: existing suite / manual check` plus a `verify` line is enough; the `commit:` line is mandatory for every task.
 
 ## Deletions
 

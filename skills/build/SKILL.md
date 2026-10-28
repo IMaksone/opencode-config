@@ -43,6 +43,29 @@ Rules:
 - Focused Vitest runs never replace the full `pnpm test` before the final report.
 - If a check fails, fix the cause and rerun the whole row of the matrix.
 
+## Live check (optional browser verification)
+
+When the change affects UI and the dev server is already running, verify the result in real Chrome via the MCP server `browser` tools. Allowed tools: `browser_browser_navigate`, `browser_browser_navigate_back`, `browser_browser_snapshot`, `browser_browser_find`, `browser_browser_click`, `browser_browser_hover`, `browser_browser_type`, `browser_browser_press_key`, `browser_browser_select_option`, `browser_browser_fill_form`, `browser_browser_wait_for`, `browser_browser_console_messages`, `browser_browser_network_requests`, `browser_browser_network_request`, `browser_browser_tabs`.
+
+Preconditions:
+
+- The user has started the dev server (`pnpm run-dev`, Vite on `http://localhost:3000`, strictPort). Never start it yourself — Process rule 7 stands.
+- The Keycloak session in the persistent Chrome profile is active (one-time manual login by the user). If the Keycloak login page opens, ask the user to log in manually in the headed Chrome window; never enter credentials yourself.
+- If the dev server is not running, skip the live check silently — it is neither `BLOCKED` nor a failure.
+
+Steps:
+
+1. `browser_browser_navigate` → the target URL (default `http://localhost:3000`).
+2. `browser_browser_snapshot` (limit `depth` for large pages) or `browser_browser_find` to locate the expected elements; interact via refs from the snapshot.
+3. `browser_browser_console_messages`; use `browser_browser_network_requests` when the change touches API calls.
+
+Success criteria:
+
+- The expected elements are present in the snapshot.
+- No **new** console errors relative to the baseline: the React DevTools INFO banner; during session start/expiry — pairs of `GET .../auth/me 401` + `Ошибка запроса к API GET auth/me 401`. MUI/deck.gl dev warnings are acceptable.
+
+Token warning: one snapshot per check — do not re-request a snapshot without page changes; prefer `browser_browser_find` to locate elements.
+
 ## Output
 
 `DONE` or `BLOCKED` with a short summary of the changes, the exact commands run, and their results. Answer the user in Russian.

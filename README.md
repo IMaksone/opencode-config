@@ -15,7 +15,7 @@ Config for [opencode](https://opencode.ai). One repository, several variants in 
 - RTK Query for server state, `sessionState` / `pageNavigationState` for UI state.
 - pnpm, Vitest, happy-dom, Testing Library, MSW.
 - Test-first workflow: plan → contract → tests → red/green implementation → review.
-- Git policy with task branches, close-out and manual MR.
+- Git policy with task branches, per-task commits after user confirmation, close-out and manual MR.
 - OpenRouter models per agent.
 - Figma: remote MCP server and a read-only REST dump via `scripts/figma-dump.js`.
 
@@ -27,7 +27,7 @@ Skills: `architecture`, `build`, `figma`, `git-policy`, `implement`, `plan`, `td
 
 The config targets `opencode 2.1.4` and the native V2 shapes: `permissions` arrays, `shell`/`subagent` actions, `mcp.servers`, and model variants.
 
-- Plugins are `plugins/subagent-watchdog.ts` (`cervart.subagent-watchdog`), `plugins/agent-config-guard.ts` (`cervart.agent-config-guard`), `plugins/foreground-only.ts` (`cervart.foreground-only`), and `plugins/delete-tool.ts` (`cervart.delete-tool`). All default-export `Plugin.define({ id, setup })` and need the V2 package:
+- Plugins are `plugins/subagent-watchdog.ts` (`cervart.subagent-watchdog`), `plugins/agent-config-guard.ts` (`cervart.agent-config-guard`), `plugins/foreground-only.ts` (`cervart.foreground-only`), `plugins/delete-tool.ts` (`cervart.delete-tool`), and `plugins/browser-guard.ts` (`cervart.browser-guard`). All default-export `Plugin.define({ id, setup })` and need the V2 package:
 
   ```bash
   cd .opencode && npm i   # @opencode/plugin@2.1.4
@@ -37,7 +37,8 @@ The config targets `opencode 2.1.4` and the native V2 shapes: `permissions` arra
 - `subagent-watchdog` aborts child sessions that stay `busy`/`retry` without activity for 10 minutes. `OPENCODE_SUBAGENT_WATCHDOG=off` disables it; `OPENCODE_SUBAGENT_WATCHDOG_TIMEOUT_MS` overrides the timeout.
 - `foreground-only` (`plugins/foreground-only.ts`, `cervart.foreground-only`) normalizes every `background: true` request on `shell`/`subagent` (and the V1 `bash`/`task`) back to foreground before execution and strips the `background` parameter from their tool schemas: background completion notifications do not reliably resume the caller session. Logs carry `service=foreground-only`: `foreground-only started`, `forced foreground`, `hook failed`. `OPENCODE_FOREGROUND_ONLY=off` disables it. Long runs now block the calling session, so give them an explicit `timeout` in ms (`0` means no timeout). Any edit under `.opencode/` needs `opencode service restart` before the plugin is active.
 - `delete-tool` (`plugins/delete-tool.ts`, `cervart.delete-tool`) registers the `delete_file` tool — the only sanctioned file deletion. It accepts 1–50 paths (absolute or project-relative), refuses anything that is not an existing `.ts`/`.tsx` file under `src/` (all-or-nothing: one invalid path cancels the whole request), then runs one `permission.assert` with the dedicated `delete` action and `save: []` — the permission is never remembered, so a test file asks again on every deletion. `agents/coder.md` allows `src/*.ts`/`src/*.tsx` and routes test files (`*.test.ts`, `*.test.tsx`, `*.testHelpers.ts`, `src/shared/testing/*`, `src/shared/api/testing/*`) through `ask`; the global `permissions` rule in `opencode.json` denies `delete` for every other agent. Deletion decisions belong to `plan` (the plan lists exact paths) and `tdd` (the coder prompt carries the list) — `coder` never picks files itself, and its shell rules have no `rm`. Logs carry `service=delete-tool`: `delete-tool started`, `delete refused`, `delete denied`, `delete executed`.
-- Module tests: `npx vitest run --config foreground/vitest.config.ts`, `npx vitest run --config watchdog/vitest.config.ts`, and `npx vitest run --config delete-tool/vitest.config.ts` (run from `.opencode/`; `vitest` resolves from the parent project's `node_modules`).
+- `browser-guard` (`plugins/browser-guard.ts`, `cervart.browser-guard`) pins live browser checks to the dev server: `browser_browser_navigate` (and `browser_browser_tabs` with `action: "new"` + `url`) may open only `http://localhost:3000` / `http://127.0.0.1:3000` (mirrors `vite.config.ts`, `strictPort`) plus `about:blank`; any other URL (the Vite defaults `5173`/`4173` agents used to guess) is refused by a `tool.execute.before` throw, and the model sees the reason naming the dev-server URL. No permission rule can do this: MCP tool resources are always `*`. Inspection tools (snapshot, find, click, console, network) pass through untouched. `OPENCODE_BROWSER_GUARD=off` disables it. Logs carry `service=browser-guard`: `browser-guard started`, `browser-guard disabled by environment`, `navigation refused`.
+- Module tests: `npx vitest run --config foreground/vitest.config.ts`, `npx vitest run --config watchdog/vitest.config.ts`, `npx vitest run --config delete-tool/vitest.config.ts`, and `npx vitest run --config browser-guard/vitest.config.ts` (run from `.opencode/`; `vitest` resolves from the parent project's `node_modules`).
 - `experimental.subagent_depth: 2` is required: `tdd` is a subagent that launches `test-generator` and `coder`.
 - Sampling lives in model variants, not in the agent frontmatter. `providers.openrouter.models.*.variants` defines `#temp-low` (temperature `0.1`, reasoning off) plus `#low`/`#high` for DeepSeek, and agents select one with `model: provider/model#variant`.
 - `execute` (Code Mode) is denied for every agent; tools are reached directly.
@@ -57,6 +58,14 @@ The config targets `opencode 2.1.4` and the native V2 shapes: `permissions` arra
 3. `docs/_deleteSmoke.md` and a directory path are refused with a reason list, nothing is deleted.
 4. In a non-coder session (`plan`) the same call is denied by permissions.
 5. `agent_config_check` reports `fresh: true`, and scratch files are gone.
+
+`browser-guard` smoke check, after `opencode service restart`:
+
+1. The server log has exactly one `browser-guard started` line (info, `service=browser-guard`).
+2. With the dev server up, `browser_browser_navigate` to `http://localhost:3000` runs normally.
+3. `browser_browser_navigate` to `http://localhost:5173` is refused with a `browser-guard:` reason naming `http://localhost:3000`, and the log has a `navigation refused` line.
+4. Snapshot, click, and console tools are untouched.
+5. `agent_config_check` reports `fresh: true`.
 
 ## Install
 

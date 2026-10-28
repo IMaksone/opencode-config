@@ -10,6 +10,21 @@
       "action": "delete",
       "resource": "*",
       "effect": "deny"
+    },
+    {
+      "action": "browser_*",
+      "resource": "*",
+      "effect": "deny"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm lint *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "pnpm exec eslint *",
+      "effect": "allow"
     }
   ],
   "providers": {
@@ -38,6 +53,12 @@
   },
   "mcp": {
     "servers": {
+      "browser": {
+        "type": "local",
+        "command": ["npx", "-y", "@playwright/mcp@0.0.83", "--browser", "chrome"],
+        "codemode": false,
+        "timeout": { "startup": 120000 }
+      },
       "figma": {
         "type": "remote",
         "url": "https://mcp.figma.com/mcp",

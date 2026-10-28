@@ -79,6 +79,8 @@ Never merge. The MR to `test`/`develop`/`main` and the merge itself are always m
 2. Commit with Conventional Commits: `<type>: <task-number> <summary>`.
 3. Stop. There is no push here: pushing belongs to `закрыть <task-number>`, and the MR and merge stay manual.
 
+A `tdd` dispatch carries the plan task's `commit:` message and the explicit paths to stage — use both verbatim: the message becomes the commit subject, the paths are the staging list.
+
 If the tree has nothing to stage, return `DONE` and report that there is nothing to commit.
 
 ### Push
