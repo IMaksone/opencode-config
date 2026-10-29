@@ -21,14 +21,16 @@ Read `CODESTYLE.md`, `AGENTS.md`, the relevant files under `docs/`, the contract
 
 - Add or update API functions, types, and public exports required by the contract.
 - Keep the skeleton minimal but real: no placeholders, no `// TODO`, no stubs in the final code.
-- Run `pnpm lint` and `pnpm typecheck`.
-- Run the focused tests. They must fail on assertions, not on import or type errors. If they fail on imports/types, fix the skeleton before continuing.
+- Run `pnpm exec eslint --cache --cache-location node_modules/.cache/eslint <changed files>` — targeted lint with the shared cache; the full `pnpm lint` is the orchestrator's gate, not yours.
+- Run the focused tests — all affected paths in a single `pnpm exec vitest run` call, output with the filter built in (`2>&1 | tail -80` or `| grep -E '<failure markers>'`). They must fail on assertions, not on import errors. If they fail on imports, fix the skeleton before continuing. The type gate (`pnpm typecheck`) belongs to the orchestrator's red stage.
 
 ### Stage 2 — green
 
 - Implement the behavior until the focused tests pass.
-- Run `pnpm lint`, `pnpm build`, and the focused tests.
+- Run the focused tests — one `pnpm exec vitest run` call over all the task's paths, with the output filter built in. The full `pnpm lint`, `pnpm typecheck`, and `pnpm build` are the orchestrator's gates (`@tdd`, or the calling `@build` session by its own matrix) — the coder never duplicates them.
 - Do not adjust the tests to make the implementation pass.
+
+When the coder is dispatched by an agent other than `tdd`, the gate commands are still run by the dispatcher under its own rules — the coder does not duplicate them either way.
 
 ## Deletions
 

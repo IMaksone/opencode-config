@@ -28,20 +28,23 @@ Read `CODESTYLE.md`, `AGENTS.md`, and the relevant files under `docs/`.
 
 ## Verification matrix
 
-| Change                                            | Commands, in order                                                                                   |
-| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Any `src/**` change                               | `pnpm exec vitest run <changed paths>` → `pnpm lint` → `pnpm typecheck` → `pnpm build` → `pnpm test` |
-| Docs, skills, agent config only                   | `pnpm lint` → `pnpm typecheck` → `pnpm test`                                                         |
-| Shared API, RTK Query endpoints, entities helpers | focused Vitest for the module → `pnpm lint` → `pnpm build` → `pnpm test`                             |
-| Build configuration, env generators, CI           | `pnpm build` → `pnpm test`                                                                           |
-| Nothing changed in `src/`                         | `pnpm lint` → `pnpm typecheck` → `pnpm test`                                                         |
+Two blocks: **iteration** (fast feedback while editing) and **final verification** (once, at the task/plan close-out).
+
+| Change                                            | Iteration                                                                                                 | Final verification           |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| Any `src/**` change                               | `pnpm exec vitest run <all affected paths, one call>` → `pnpm lint` → `pnpm typecheck`                     | `pnpm build` → `pnpm test`   |
+| Shared API, RTK Query endpoints, entities helpers | same iteration row (focused Vitest for the module, one call)                                               | `pnpm build` → `pnpm test`   |
+| Docs, skills, agent config only                   | `pnpm typecheck`                                                                                           | — (CI covers the full suite) |
+| Build configuration, env generators, CI           | —                                                                                                          | `pnpm build` → `pnpm test`   |
+| Nothing changed in `src/`                         | `pnpm typecheck`                                                                                           | —                            |
 
 Rules:
 
 - A command counts as passed only with exit code 0. Paste the exact commands and their results into the report.
-- `pnpm build` already runs `pnpm typecheck`; still run typecheck when the matrix lists it, so a type error is reported separately from a bundling error.
-- Focused Vitest runs never replace the full `pnpm test` before the final report.
-- If a check fails, fix the cause and rerun the whole row of the matrix.
+- `pnpm build` already runs `pnpm typecheck`: never run a standalone typecheck and `pnpm build` in the same row. `pnpm build` and the full `pnpm test` belong to the final verification block only — never to the iteration.
+- **One run — one result.** The truncated preview hides test-failure summaries (they sit at the end of the output), so build the filter into the first and only run: `… 2>&1 | tail -80` or `… | grep -E '<failure markers>'` (`tail *`/`grep *`/`head *` are allow-listed, the scanner passes these compound calls). For a deep dive use `pnpm exec vitest run <paths> --reporter=json --outputFile=.tmp/<slug>.json` (one call, known path) and inspect the file with `rg`/`cat`. Re-running the same command just to change the output filter is forbidden.
+- **Batch Vitest paths.** Pass all affected test paths in a single `pnpm exec vitest run` call (one cold start), never one file per run, and never several concurrent runs of the same tests.
+- If a check fails, fix the cause and rerun the failed command and the rest of its row — commands that already passed are not repeated.
 
 ## Live check (optional browser verification)
 

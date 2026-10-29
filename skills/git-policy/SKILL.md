@@ -24,6 +24,8 @@ Dispatched by `tdd` — the first line of the task is one of:
 - `коммит <task-number>`
 - `закрыть <task-number>`
 
+A batch confirmation from the `tdd` user («продолжи всё») pre-covers the sequential `коммит <task-number>` dispatches of the remaining tasks up to `G`; `закрыть <task-number>` always requires its own explicit confirmation.
+
 From `tdd` you may operate only on the base branch (`test`, `main`, `develop`) and the task branch.
 
 Manual session — act only on an explicit user command: commit (`коммит <task-number>`), push, close-out (`закрыть <task-number>`), or `branch.switch <branch>`. The target branch may be any existing branch, including `main`, `test`, and `develop`.

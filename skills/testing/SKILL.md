@@ -25,13 +25,15 @@ Condensed reference for unit tests. Full rules and per-module coverage notes: [d
 6. For API tests use the shared harness: `createApiTestHarness` creates an isolated API and store, `captureJsonRequests` asserts method/pathname/query/body, `server.use` adds special handlers, and unhandled requests fail the test (`onUnhandledRequest: 'error'`). Use realistic fixtures and assert `transformResponse` results.
 7. Isolate: reset mocks and timers in `afterEach` (`vi.restoreAllMocks()`, `vi.useRealTimers()`, `vi.unstubAllGlobals()`), `unsubscribe` manual subscriptions, never reuse a store between tests. The API setup already resets MSW handlers and RTK Query state.
 8. Test behavior, not implementation. One `describe` per module; English case names (`filters wells by selected codes as strings`). No layout snapshots.
-9. Run focused tests, then the suite:
+9. Run focused tests during the iteration; the full suite only at the final verification of the task/plan:
 
 ```bash
-pnpm exec vitest run <paths>
-pnpm exec vitest run src/entities
-pnpm test
+pnpm exec vitest run <paths> 2>&1 | tail -80    # ALL affected paths in ONE call
+pnpm exec vitest run src/entities 2>&1 | grep -E '✓|×|FAIL|Tests '
+pnpm test                                        # final verification only
 ```
+
+   One run — one result: build the output filter into the first run (`| tail`/`| grep` — allow-listed parts); re-running the same command to change the filter is forbidden. For a deep dive: `--reporter=json --outputFile=.tmp/<slug>.json`, then inspect the file with `rg`/`cat`.
 
 ## What to test
 
