@@ -1,5 +1,7 @@
 # Plan: foreground-only plugin for `.opencode` (Cervart)
 
+Status: closed (30.10.2026)
+
 ## Goal
 
 Перенести плагин `foreground-only` из `/Users/imaksone/projects/expense_management_frontend/.opencode/`

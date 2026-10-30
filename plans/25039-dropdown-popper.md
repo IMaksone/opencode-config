@@ -1,5 +1,7 @@
 # Plan: DropDown — выпадающее меню через портал (MUI Popper)
 
+Status: closed (30.10.2026)
+
 ## Goal
 
 Контент выпадающего меню `DropDown` рендерится как `absolute left-0 top-[65px] z-drop-down` внутри DOM-обёртки и обрезается overflow-контейнерами (ячейки/таблицы — та же проблема, что была у `SuggestionsInput`, см. план `suggestions-input-popper-portal.md`). Решение — паттерн `SuggestionsInput.tsx`: MUI `Popper` (`@mui/material@6.4.0` уже в зависимостях) — портал в `document.body`, авто-позиционирование с flip.

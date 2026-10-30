@@ -1,5 +1,7 @@
 # 25039 — вынести auto-контент ГТМ в `_ui/GtmAutoContent`
 
+Status: closed (30.10.2026)
+
 ## Goal
 
 В `GTMTab.tsx` контент режимов `semiAuto` и `manual` уже вынесен в `_ui` (`GtmSemiAutoContent`, `GtmManualContent`), а контент режима `auto` (таблица + итоги) остался инлайн-блоком (строки 77–96). Вынести его в `_ui/GtmAutoContent/GtmAutoContent.tsx` по образцу `GtmSemiAutoContent`. Чистый рефакторинг без изменения поведения и DOM.

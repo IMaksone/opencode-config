@@ -1,6 +1,6 @@
 # 25039 — таски в скиллах `plan` и `tdd`
 
-Status: ready (ревизия 26.10). Not executed. Исполнение — один ручной сеанс `@build` (шаги 1–2, 4–7 и 8.1–8.2): у `coder` права только на `src/**`, у `tdd` — на `.tmp/contracts/**`, а guard блокирует dispatch после первой правки `.opencode/**`. `@tdd` участвует только в smoke dry-run (8.3). Config/markdown-only: юнит-тестов нет, верификация — ревью-чек-лист + smoke после перезапуска opencode.
+Status: closed (30.10.2026). Было: ready (ревизия 26.10). Not executed. Исполнение — один ручной сеанс `@build` (шаги 1–2, 4–7 и 8.1–8.2): у `coder` права только на `src/**`, у `tdd` — на `.tmp/contracts/**`, а guard блокирует dispatch после первой правки `.opencode/**`. `@tdd` участвует только в smoke dry-run (8.3). Config/markdown-only: юнит-тестов нет, верификация — ревью-чек-лист + smoke после перезапуска opencode.
 
 - Task: `25039`
 - Branch: `none` — остаёмся на текущей `km_feat/25039-model-settings`, новая не создаётся

@@ -1,5 +1,7 @@
 # 25039 — Доработка новых интерфейсов SettingsMode: только UI-элементы проекта
 
+Status: closed (30.10.2026)
+
 ## Goal
 
 Рефакторинг новых интерфейсов вкладки «ГТМ» в `src/pages/ProjectPage/_ui/SettingsMode`: заменить сырые `<input>`, `<button>`, `<table>` и индивидуальные стили на существующие UI-элементы проекта (shared/ui-kit): `Button`, `TextInput`, `NumberInput`, `SuggestionsInput`, `DataTables.SimpleTable`. Новых UI-элементов не создавать. Поведенческие контракты (валидация строк, сортировка, вставка из Excel, disabled-режим, загрузка шаблона) сохранить.

@@ -1,6 +1,6 @@
 # 25039 — Право удаления файлов для coder (delete_file)
 
-Status: ready. Открытым планом объявлен этот; `25039-gtm-manual-layout.md`, `25039-plan-tdd-tasks.md`, `25039-gtm-semi-auto-layout.md`, `opencode-v2-config-migration.md` приостанавливаются до его закрытия. Hand off only to `@tdd`.
+Status: closed (30.10.2026). Было: ready. Открытым планом объявлен этот; `25039-gtm-manual-layout.md`, `25039-plan-tdd-tasks.md`, `25039-gtm-semi-auto-layout.md`, `opencode-v2-config-migration.md` приостанавливаются до его закрытия. Hand off only to `@tdd`.
 
 ## Goal
 

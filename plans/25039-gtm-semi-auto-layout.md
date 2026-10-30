@@ -1,6 +1,6 @@
 # 25039 — вёрстка режима «Полуавтоматическое» вкладки «ГТМ» (`ProjectPage/SettingsMode`)
 
-Status: ready (ревизия 26.10.2026: формат `Tasks`, свежий `Runtime`, решения по отклонениям от макета). Not executed. Hand off only to `@tdd`.
+Status: closed (30.10.2026). Было: ready (ревизия 26.10.2026: формат `Tasks`, свежий `Runtime`, решения по отклонениям от макета). Not executed. Hand off only to `@tdd`.
 
 - Task: `25039`
 - Branch: `none` — работа продолжается в текущей `km_feat/25039-model-settings`, новая ветка не создаётся

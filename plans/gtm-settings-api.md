@@ -1,5 +1,7 @@
 # План 25039 — Эндпоинты настроек ГТМ (`settings/gtms`, `settings/upload`)
 
+Status: closed (30.10.2026)
+
 ## Goal
 
 Добавить в `settingsEndpoints` (`src/shared/api/queries/settings.ts`) три эндпоинта для настроек геолого-технических мероприятий (ГТМ):
