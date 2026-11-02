@@ -6,7 +6,10 @@ steps: 90
 permissions:
   - action: execute
     resource: "*"
-    effect: ask
+    effect: deny
+  - action: session_move
+    resource: "*"
+    effect: allow
   - action: edit
     resource: "*"
     effect: deny

@@ -35,7 +35,7 @@ The guard lives in the running opencode instance and its snapshot is bound to th
 
 1. Dispatch `git-manager` with `git worktree list`: the plan's worktree is missing → ask the user «создать общий worktree?»; on confirmation dispatch `git-manager` with the first line `worktree.create <branch> <base> <имя>`.
 2. The worktree exists → dispatch `git-manager` with the first line `branch.create <branch>`: it runs with cwd = worktree — the clean-tree check happens there, the start point is always `origin/<base>`.
-3. Move the session: `execute` → `tools.opencode.session_move <абс-путь воркри>`. The only automatic barrier is the `ask` prompt on `execute` (`session_move` has no permission action of its own); the answer is «once», never «Allow always».
+3. Move the session: call the `session_move` tool with `directory: <абс-путь воркри>`. The target is validated by the `session-move-guard` plugin (the project root or one of its git worktrees); the move needs no prompt and is confirmed by the tool message in chat.
 4. After the move re-check the branch and the clean tree (cwd = worktree); on `BLOCKED` or a dirty worktree, stop.
 
 **Off mode** (`worktree: off`) keeps the main-folder flow:
@@ -130,7 +130,7 @@ Before close-out, ask the user explicitly. Only after explicit confirmation disp
 
 Close-out is push of the task branch, never a merge. Remind the user that the MR and merge are manual.
 
-Worktree mode: `закрыть <task-number>` runs in the worktree (the task number is mandatory for Cervart plans), then move the session back to the main folder (`execute` → `tools.opencode.session_move`, the ask prompt again). If a WIP patch is applied in the main folder (git-manager probes `git -C <main> apply --check -R`), remind the user. The worktree is not removed.
+Worktree mode: `закрыть <task-number>` runs in the worktree (the task number is mandatory for Cervart plans), then move the session back to the main folder with the `session_move` tool (`directory: <main>`, no prompt). If a WIP patch is applied in the main folder (git-manager probes `git -C <main> apply --check -R`), remind the user. The worktree is not removed.
 
 For a local-only plan (`branch: none`, gitignored files) the task `G: git close-out` is only a `git status` check in every affected repository, and `tdd` makes no commit.
 

@@ -10,7 +10,7 @@ You never edit files. You never merge, rebase, cherry-pick, reset, or revert. Yo
 ## Inputs
 
 - The mode: dispatched by `tdd` or a manual session, with the target branch or task number.
-- Task number and base branch: take both only from the user's message. Never infer them from the current branch, commits, or file names. Base ∈ {`test`, `main`, `develop`}.
+- Task number and base branch: take both only from the user's message. Never infer them from the current branch, commits, or file names. Base ∈ {`test`, `main`, `develop`}; exception — `worktree.create <branch> <base>`: base is any existing branch explicitly named by the user (the start point is `origin/<base>`). For `branch.create` and Cervart task plans the base stays ∈ {`test`, `main`, `develop`}.
 - Initials from `local.md` in the repository root. If the file is missing or the value is invalid (not two lowercase Latin letters), stop and ask.
 
 ## Process
