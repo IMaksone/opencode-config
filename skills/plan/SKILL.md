@@ -21,6 +21,7 @@ Read `CODESTYLE.md`, `AGENTS.md`, and the relevant files under `docs/` before pl
 
 1. Run `git status --porcelain`, `git diff`, and `git branch --show-current`.
 2. If tracked files are modified or staged, decide whether they belong to this task. If they do not, stop and list the paths. Do not plan on top of unrelated changes.
+   Exception — an applied WIP patch is not unrelated dirt: uncommitted changes in the MAIN folder (Cervart-task plans) are accepted when (i) `<main>/.tmp/wip-sync/<san>.patch` exists (`<san>` = the branch with every `/` replaced by `_`) and (ii) the changed paths (`git status --porcelain`) match the patch headers (`+++`/`---`, read with `cat`/`grep`). Then report «применён WIP-патч ветки X» instead of blocking; when in doubt, the exact probe `git -C <main> apply --check -R` is run by `git-manager` on request. Everything else is treated as before. A plan for `.opencode` itself runs in the main folder as usual.
 3. Keep exactly one open plan at a time. If `<project root>/.opencode/plans/` already contains a plan for another task, stop and ask.
 4. Explore the codebase: FSD layer boundaries, existing public APIs, related tests, and docs. Prefer reading over guessing.
 5. Before dispatching `@tdd` or `@build`, call the `agent_config_check` tool and record its result in the plan's **Runtime** section:
@@ -44,6 +45,7 @@ The Git section must contain:
 
 - `branch`: `XX_<type>/<task-number>-<slug>` or `none`. `<type>` is one of `feat`, `fix`, `chore`, `build`, `ci`, `docs`, `style`, `refactor`, `perf`, `test`, `testease`.
 - `base`: only the branch explicitly named by the user.
+- `worktree`: `shared | dedicated(<имя>) | off` — always written explicitly, default `shared` (`shared` → the worktree `<main>/../cervart-wt/agent`, `dedicated(<имя>)` → `<main>/../cervart-wt/<имя>`).
 - `tree`: `clean`, a list of paths, or `unknown`.
 - `sync`: `on` by default; `off` only with a written reason.
 - `switch`: only through `git-manager` after explicit user confirmation; `plan` never runs git write commands.

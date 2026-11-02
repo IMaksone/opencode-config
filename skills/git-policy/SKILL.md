@@ -22,13 +22,18 @@ Dispatched by `tdd` — the first line of the task is one of:
 - `branch.create <branch>`
 - `branch.switch <branch>`
 - `коммит <task-number>`
+- `коммит-конфиг <T-id>`
 - `закрыть <task-number>`
+- `worktree.create <branch> <base> [имя]`
+- `worktree.remove [имя]`
+- `wip.sync <branch>`
+- `wip.unsync <branch>`
 
 A batch confirmation from the `tdd` user («продолжи всё») pre-covers the sequential `коммит <task-number>` dispatches of the remaining tasks up to `G`; `закрыть <task-number>` always requires its own explicit confirmation.
 
 From `tdd` you may operate only on the base branch (`test`, `main`, `develop`) and the task branch.
 
-Manual session — act only on an explicit user command: commit (`коммит <task-number>`), push, close-out (`закрыть <task-number>`), or `branch.switch <branch>`. The target branch may be any existing branch, including `main`, `test`, and `develop`.
+Manual session — act only on an explicit user command: commit (`коммит <task-number>`), push, close-out (`закрыть <task-number>`), `branch.switch <branch>`, worktree lifecycle («создай общий worktree [от <base>]» → `worktree.create`, «удали worktree» → `worktree.remove`), or WIP sync («синхронизируй WIP» → `wip.sync <branch>», «убери WIP-синк» → `wip.unsync <branch>`). Worktree creation/removal and WIP sync never run automatically. The target branch may be any existing branch, including `main`, `test`, and `develop`.
 
 ### Branch names
 
@@ -60,6 +65,45 @@ Before `git switch`, run `git status --porcelain`.
 - After switching to the base branch, run `git pull --ff-only`. If it diverges, return `BLOCKED`.
 - Switching to `main`, `test`, or `develop` is allowed. Pushing to them is forbidden.
 - Never switch with a force or discard variant; they are forbidden.
+- In worktree mode the main folder is never switched or pulled (no `switch`/`pull` in `<main>`, `-C` forms included), and the task branch is never checked out in the main folder.
+
+### Worktree mode
+
+All worktree and WIP paths are absolute. Determine `<main>` with `git worktree list` — the first line is the main folder; `<wt>` is the absolute worktree path, `<main>/../cervart-wt/<имя>` (default name `agent`). Inside the worktree plain git commands run with cwd = worktree; commands touching other folders use `git -C <абс-путь>`.
+
+`worktree.create <branch> <base> [имя]` (default `agent`):
+
+1. `git fetch origin`.
+2. `git worktree add <main>/../cervart-wt/<имя> -b <branch> origin/<base>` — the absolute path is correct from any folder of the repository, the worktree included.
+3. Set the worktree up with cwd = worktree: `cp <main>/.npmrc .npmrc`, `corepack enable`, `corepack prepare pnpm@11.5.1 --activate`, `pnpm install`, `pnpm gen-env-<env>` (the env comes from the user's context).
+
+`branch.create <branch>` dispatched from inside a worktree (worktree-mode `tdd` entry): check the clean tree rule IN the worktree before creating the branch, then `git fetch origin` and `git switch -c <branch> origin/<base>` — the start point is always `origin/<base>` (the worktree HEAD may sit on the previous task's branch). `git pull --ff-only` is not needed in this mode.
+
+`worktree.remove [имя]` — only on an explicit user request («удали worktree»):
+
+1. The worktree must be clean: `git -C <wt> status --porcelain`; a dirty tree → ask the user, never force.
+2. If the session's cwd is inside the worktree being removed, report «сначала вернуть сессию в основную папку» (git refuses to delete its own cwd) and stop.
+3. `git worktree remove <абс-путь>`. Force forms (`-f`, `--force`) are forbidden.
+
+### WIP sync
+
+`wip.sync <branch>` / `wip.unsync <branch>` run only on an explicit user command («синхронизируй WIP» / «убери WIP-синк»), never automatically. `<san>` is `<branch>` with every `/` replaced by `_` (a slash is invalid in a file name); the patch file is `<main>/.tmp/wip-sync/<san>.patch`, the base is stored next to it in `<san>.base`.
+
+`wip.sync <branch>`:
+
+1. `mkdir -p <main>/.tmp/wip-sync` — `git diff --output` does not create directories.
+2. If the patch file exists: `git -C <main> apply --check -R <патч>`; applicable → `git -C <main> apply -R <патч>`; not applicable → skip the rollback (the patch is already reverted) and continue. The applied/reverted state is decided by this probe alone, never by the file's existence.
+3. `git -C <wt> add -N .` — intent-to-add so new files appear in the diff (the agreed exception from «Never `git add .`»: this is not commit staging).
+4. `git -C <wt> diff origin/<base> --output=<main>/.tmp/wip-sync/<san>.patch` — the full diff from `origin/<base>` (commits + uncommitted); save the base into `<san>.base`.
+5. `git -C <main> apply` the new patch: the main folder now carries the task's diff as uncommitted changes.
+
+Patch files are never removed (harmless thanks to the probe in step 2). Any step fails → report, never force.
+
+`wip.unsync <branch>`: `git -C <main> apply --check -R <патч>` → applicable → `git -C <main> apply -R <патч>`; not applicable → report «патч не применён».
+
+### Commit of the `.opencode` config repository
+
+`коммит-конфиг <T-id>` commits the nested `.opencode` repository (config plans without a task number): `git -C <main>/.opencode add <пути>`, then `git -C <main>/.opencode commit -m "<сообщение>"`. The paths and the message arrive verbatim from the plan task's `commit:` line and its affected files.
 
 ### Merge
 

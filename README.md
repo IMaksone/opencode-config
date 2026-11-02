@@ -16,6 +16,7 @@ Config for [opencode](https://opencode.ai). One repository, several variants in 
 - pnpm, Vitest, happy-dom, Testing Library, MSW.
 - Test-first workflow: plan → contract → tests → red/green implementation → review.
 - Git policy with task branches, per-task commits after user confirmation, close-out and manual MR.
+- Agent worktree workflow: a shared worktree at `../cervart-wt/agent`, branch from `origin/<base>`, WIP sync patches on the user's command.
 - OpenRouter models per agent.
 - Figma: remote MCP server and a read-only REST dump via `scripts/figma-dump.js`.
 
@@ -66,6 +67,16 @@ The config targets `opencode 2.1.4` and the native V2 shapes: `permissions` arra
 3. `browser_browser_navigate` to `http://localhost:5173` is refused with a `browser-guard:` reason naming `http://localhost:3000`, and the log has a `navigation refused` line.
 4. Snapshot, click, and console tools are untouched.
 5. `agent_config_check` reports `fresh: true`.
+
+## Agent worktree workflow
+
+Task work runs in a shared git worktree; the main folder is never switched or pulled.
+
+1. On the user's request («создай общий worktree [от <base>]») `git-manager` runs `worktree.create <branch> <base>`: `git worktree add <main>/../cervart-wt/agent -b <branch> origin/<base>` plus the dependency setup (`.npmrc`, `corepack`, `pnpm install`, `gen-env`).
+2. `tdd` moves the session into the worktree (`execute` → `tools.opencode.session_move <абс-путь>`; the move is gated by the `execute` permission of the session's agent — answer «once», never «Allow always») and dispatches `branch.create <branch>` with the start point `origin/<base>`.
+3. Tasks and per-task commits run in the worktree; the commits land on the branch in the main repository immediately (shared `.git`) — no commit transport is needed.
+4. WIP sync — only on the user's command: «синхронизируй WIP» applies the task's full diff from `origin/<base>` in the main folder as uncommitted changes (`wip.sync`), «убери WIP-синк» reverts it (`wip.unsync`). The applied state is probed with `git apply --check -R`; patch files accumulate in `<main>/.tmp/wip-sync/`.
+5. Close-out (`закрыть <task-number>`) runs in the worktree, then the session moves back to the main folder; a still-applied WIP patch is reported. The worktree stays until the user asks to remove it («удали worktree»).
 
 ## Install
 

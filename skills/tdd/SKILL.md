@@ -11,9 +11,10 @@ Read `CODESTYLE.md`, `AGENTS.md`, the relevant files under `docs/`, and the plan
 
 ## Inputs
 
-- The plan from `<project root>/.opencode/plans/<slug>.md` or the user's task description.
+- The plan from `<project root>/.opencode/plans/<slug>.md` or the user's task description. In worktree mode the plan lives in the main folder — read it by its absolute path.
 - Task number, base branch, and task branch from the plan. If any of them is missing, stop and ask.
 - Initials from `local.md` in the repository root; if missing or invalid, stop and ask.
+- Worktree mode from the plan's Git section: `worktree: shared | dedicated(<имя>) | off`, default `shared`. The worktree name is `agent` for `shared` and `<имя>` for `dedicated`; the worktree lives at `<main>/../cervart-wt/<имя>`.
 
 ## Process
 
@@ -30,13 +31,22 @@ The guard lives in the running opencode instance and its snapshot is bound to th
 
 ### 1. Git preparation
 
+**Worktree mode** (`worktree: shared | dedicated(<имя>)`, the default) replaces the main-folder flow: the main folder is neither checked for dirt nor touched — no `branch.switch`, no `pull`, no `branch.create` there.
+
+1. Dispatch `git-manager` with `git worktree list`: the plan's worktree is missing → ask the user «создать общий worktree?»; on confirmation dispatch `git-manager` with the first line `worktree.create <branch> <base> <имя>`.
+2. The worktree exists → dispatch `git-manager` with the first line `branch.create <branch>`: it runs with cwd = worktree — the clean-tree check happens there, the start point is always `origin/<base>`.
+3. Move the session: `execute` → `tools.opencode.session_move <абс-путь воркри>`. The only automatic barrier is the `ask` prompt on `execute` (`session_move` has no permission action of its own); the answer is «once», never «Allow always».
+4. After the move re-check the branch and the clean tree (cwd = worktree); on `BLOCKED` or a dirty worktree, stop.
+
+**Off mode** (`worktree: off`) keeps the main-folder flow:
+
 1. Check `git status --porcelain` and `git branch --show-current`.
 2. If there are staged or modified tracked files, stop and return `BLOCKED` with the paths. Untracked files are allowed.
 3. If the current branch is not the base branch, ask the user for confirmation. Only after explicit confirmation, dispatch `git-manager` with the first line `branch.switch <base>` and ask it to run `git pull --ff-only`. Then dispatch `git-manager` with the first line `branch.create <branch>`.
 4. If `git-manager` returns `BLOCKED`, stop. If it returns `DONE`, verify the current branch and continue.
 5. Without user confirmation, or on a dirty tree, stop.
 
-For a local-only plan (`branch: none`, the files are gitignored) there is nothing to switch or create: check `git status --porcelain` only and continue on the current branch.
+For a local-only plan (`branch: none`, the files are gitignored) there is nothing to switch or create: check `git status --porcelain` only and continue on the current branch — unless the plan's Git section explicitly requires commits through `коммит-конфиг` (a config plan); that section overrides the local-only skip.
 
 ### 2. Progress file
 
@@ -59,6 +69,8 @@ Last: T1 done+committed, next T2
 ```
 
 Before starting a new plan: if `.tmp/contracts/` holds an unfinished progress file of another plan, offer the user to finish that plan to `G` first or to park it explicitly (a note in its `Last:` line). Never run a new plan in parallel with an open one.
+
+In worktree mode the progress and contract files are written relative to the worktree's cwd (`.tmp/contracts/**` of the worktree) and disappear together with it — by design; the unfinished-plan check above looks at the worktree's `.tmp/contracts/`.
 
 ### 3. Contract
 
@@ -87,10 +99,10 @@ For each task:
 2. Tests: dispatch `test-generator` with the contract, the task, and the list of files it may touch. Review `git diff`, contract compliance, style, and edge cases. Do not proceed to `coder` until the tests are accepted. For Markdown and config tasks with `tests: existing suite / manual check` skip this dispatch.
 3. Red: dispatch `coder` for stage 1 (skeleton). Verify that the tests fail on assertions, not on import errors. Run `pnpm typecheck` — the skeleton's type gate; the coder's stage 1 already ran the targeted eslint, so the orchestrator does not repeat a full lint here. If the failure is an import/type error, send the coder back to fix the skeleton.
 4. Green: dispatch a fresh `coder` session for stage 2. Verify with the task's `verify` commands plus `pnpm lint` and `pnpm typecheck`. Vitest is already part of the task's `verify`; launch a separate `pnpm exec vitest run` only when `verify` does not cover it — then as one call over all the task's paths.
-   Optional live check (UI-changing tasks only, and only when the user has already started the dev server): after green, run `browser_browser_navigate` to `http://localhost:3000<route>` (the dev port is pinned by `vite.config.ts`, `strictPort`; `5173`/`4173` never exist here — the `browser-guard` plugin denies them), then `browser_browser_snapshot` / `browser_browser_find` for the expected elements and `browser_browser_console_messages` for new errors versus the baseline (React DevTools INFO banner; `GET .../auth/me 401` pairs during session start/expiry). Never start the dev server yourself, never enter Keycloak credentials — the manual login belongs to the user. One snapshot per check. If the dev server is not running, skip the live check; it is not blocking.
+   Optional live check (UI-changing tasks only, and only when the user has already started the dev server): after green, run `browser_browser_navigate` to `http://localhost:3000<route>` (the dev port is pinned by `vite.config.ts`, `strictPort`; `5173`/`4173` never exist here — the `browser-guard` plugin denies them), then `browser_browser_snapshot` / `browser_browser_find` for the expected elements and `browser_browser_console_messages` for new errors versus the baseline (React DevTools INFO banner; `GET .../auth/me 401` pairs during session start/expiry). Never start the dev server yourself, never enter Keycloak credentials — the manual login belongs to the user. One snapshot per check. If the dev server is not running, skip the live check; it is not blocking. In worktree mode the check is valid only when the dev server runs FROM the worktree (the port 3000 is single); a server started in the main folder shows another branch — skip it, not blocking.
 5. Mark the task as done in the progress file and update the `Last:` line.
 6. **Pause, report, commit**: report «сделано / осталось / следующая» and end with «закоммитить T<n> и продолжаем?». Only on an explicit «продолжи»:
-   1. dispatch `git-manager` with the first line `коммит <task-number>`, passing the task's `commit:` message and its explicit paths from the plan — stage exactly those paths;
+   1. dispatch `git-manager` with the first line `коммит <task-number>`, passing the task's `commit:` message and its explicit paths from the plan — stage exactly those paths (worktree mode: the dispatch runs with cwd = worktree, the paths stay worktree-relative; no WIP sync happens automatically). For a config plan without a task number whose Git section requires commits, dispatch the first line `коммит-конфиг <T-id>` instead — the plan's Git section overrides the local-only skip;
    2. on `DONE` continue with the next task; on `BLOCKED` (for example a failed pre-commit hook) stop and report — the next task never starts on an uncommitted tree;
    3. for a local-only plan (`branch: none`) skip the dispatch — there is nothing to commit.
 
@@ -104,6 +116,10 @@ A task is accepted only when its own `verify` passes. `pnpm build` and the full 
 
 If a dispatch shows no progress, apply “Watchdog and restart”.
 
+### WIP sync on user command
+
+«синхронизируй WIP» / «убери WIP-синк» are user-only commands, never automatic: dispatch `git-manager` with the first line `wip.sync <branch>` / `wip.unsync <branch>` and report the result. No other step of the flow triggers a sync.
+
 ### 5. Final review and close-out
 
 Review the committed work against the plan and the contract — `git diff <base>...HEAD` on the task branch — check the architecture, and make sure the tests were not adjusted to fit the implementation. Run the plan-wide checks: `pnpm build` and `pnpm test`.
@@ -113,6 +129,8 @@ Every task was committed at its own pause, so the tree must be clean here. A dir
 Before close-out, ask the user explicitly. Only after explicit confirmation dispatch `git-manager` with the first line `закрыть <task-number>` (it commits leftovers if the tree is dirty, then pushes the task branch).
 
 Close-out is push of the task branch, never a merge. Remind the user that the MR and merge are manual.
+
+Worktree mode: `закрыть <task-number>` runs in the worktree (the task number is mandatory for Cervart plans), then move the session back to the main folder (`execute` → `tools.opencode.session_move`, the ask prompt again). If a WIP patch is applied in the main folder (git-manager probes `git -C <main> apply --check -R`), remind the user. The worktree is not removed.
 
 For a local-only plan (`branch: none`, gitignored files) the task `G: git close-out` is only a `git status` check in every affected repository, and `tdd` makes no commit.
 

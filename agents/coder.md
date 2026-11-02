@@ -11,6 +11,12 @@ permissions:
     resource: "*"
     effect: deny
   - action: edit
+    resource: ".opencode/*"
+    effect: allow
+  - action: edit
+    resource: "*/.opencode/*"
+    effect: allow
+  - action: edit
     resource: "src/*"
     effect: allow
   - action: edit

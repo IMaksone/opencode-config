@@ -6,7 +6,7 @@ steps: 90
 permissions:
   - action: execute
     resource: "*"
-    effect: deny
+    effect: ask
   - action: edit
     resource: "*"
     effect: deny

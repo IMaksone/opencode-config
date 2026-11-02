@@ -119,6 +119,67 @@ permissions:
   - { action: shell, resource: "git switch * --orphan*", effect: deny }
   - { action: shell, resource: "git switch --guess*", effect: deny }
   - { action: shell, resource: "git switch * --guess*", effect: deny }
+  - { action: shell, resource: "git worktree add *", effect: allow }
+  - { action: shell, resource: "git worktree list *", effect: allow }
+  - { action: shell, resource: "git worktree remove *", effect: allow }
+  - { action: shell, resource: "git worktree remove -f*", effect: deny }
+  - { action: shell, resource: "git worktree remove * -f*", effect: deny }
+  - { action: shell, resource: "git worktree remove --force*", effect: deny }
+  - { action: shell, resource: "git worktree remove * --force*", effect: deny }
+  - { action: shell, resource: "git -C * status *", effect: allow }
+  - { action: shell, resource: "git -C * rev-parse *", effect: allow }
+  - { action: shell, resource: "git -C * diff *", effect: allow }
+  - { action: shell, resource: "git -C * apply *", effect: allow }
+  - { action: shell, resource: "git -C * switch *", effect: allow }
+  - { action: shell, resource: "git -C * add -N *", effect: allow }
+  - { action: shell, resource: "git -C * add --intent-to-add *", effect: allow }
+  - { action: shell, resource: "git -C * switch -f*", effect: deny }
+  - { action: shell, resource: "git -C * switch * -f*", effect: deny }
+  - { action: shell, resource: "git -C * switch -C*", effect: deny }
+  - { action: shell, resource: "git -C * switch * -C*", effect: deny }
+  - { action: shell, resource: "git -C * switch --force*", effect: deny }
+  - { action: shell, resource: "git -C * switch * --force*", effect: deny }
+  - { action: shell, resource: "git -C * switch --di*", effect: deny }
+  - { action: shell, resource: "git -C * switch * --di*", effect: deny }
+  - { action: shell, resource: "git -C * switch -m*", effect: deny }
+  - { action: shell, resource: "git -C * switch * -m*", effect: deny }
+  - { action: shell, resource: "git -C * switch --merge*", effect: deny }
+  - { action: shell, resource: "git -C * switch * --merge*", effect: deny }
+  - { action: shell, resource: "git -C * switch --orphan*", effect: deny }
+  - { action: shell, resource: "git -C * switch * --orphan*", effect: deny }
+  - { action: shell, resource: "git -C * switch --guess*", effect: deny }
+  - { action: shell, resource: "git -C * switch * --guess*", effect: deny }
+  - { action: shell, resource: "git -C * add -A*", effect: deny }
+  - { action: shell, resource: "git -C * add --all*", effect: deny }
+  - { action: shell, resource: "git -C * add --a*", effect: deny }
+  - { action: shell, resource: "git -C * commit*", effect: deny }
+  - { action: shell, resource: "git -C * push*", effect: deny }
+  - { action: shell, resource: "git -C * reset*", effect: deny }
+  - { action: shell, resource: "git -C * restore*", effect: deny }
+  - { action: shell, resource: "git -C * checkout*", effect: deny }
+  - { action: shell, resource: "git -C * clean*", effect: deny }
+  - { action: shell, resource: "git -C * worktree*", effect: deny }
+  - { action: shell, resource: "git -C */.opencode add *", effect: allow }
+  - { action: shell, resource: "git -C */.opencode commit -m *", effect: allow }
+  - { action: shell, resource: "git -C */.opencode add -A*", effect: deny }
+  - { action: shell, resource: "git -C */.opencode add --a*", effect: deny }
+  - { action: shell, resource: "git -C */.opencode add .", effect: deny }
+  - { action: shell, resource: "git -C */.opencode add . *", effect: deny }
+  - { action: shell, resource: "git -C */.opencode add -p*", effect: deny }
+  - { action: shell, resource: "git -C */.opencode add -i*", effect: deny }
+  - { action: shell, resource: "git -C */.opencode add -f*", effect: deny }
+  - { action: shell, resource: "git -C */.opencode commit -m * --am*", effect: deny }
+  - { action: shell, resource: "git -C */.opencode commit -m * --no-v*", effect: deny }
+  - { action: shell, resource: "git -C */.opencode commit -m * --edit*", effect: deny }
+  - { action: shell, resource: "git -C */.opencode commit -m * -n*", effect: deny }
+  - { action: shell, resource: "git -C */.opencode commit -m * -e*", effect: deny }
+  - { action: shell, resource: "git -C */.opencode commit -m * -c*", effect: deny }
+  - { action: shell, resource: "cp */.npmrc .npmrc", effect: allow }
+  - { action: shell, resource: "corepack enable *", effect: allow }
+  - { action: shell, resource: "corepack prepare *", effect: allow }
+  - { action: shell, resource: "pnpm install *", effect: allow }
+  - { action: shell, resource: "pnpm gen-env-* *", effect: allow }
+  - { action: shell, resource: "mkdir -p */.tmp/wip-sync", effect: allow }
   - { action: subagent, resource: "*", effect: deny }
   - { action: webfetch, resource: "*", effect: deny }
   - { action: websearch, resource: "*", effect: deny }
