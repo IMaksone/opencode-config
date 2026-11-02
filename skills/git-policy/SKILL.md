@@ -25,6 +25,7 @@ Dispatched by `tdd` — the first line of the task is one of:
 - `коммит-конфиг <T-id>`
 - `закрыть <task-number>`
 - `worktree.create <branch> <base> [имя]`
+- `worktree.kit [имя]`
 - `worktree.remove [имя]`
 - `wip.sync <branch>`
 - `wip.unsync <branch>`
@@ -33,7 +34,7 @@ A batch confirmation from the `tdd` user («продолжи всё») pre-cover
 
 From `tdd` you may operate only on the base branch (`test`, `main`, `develop`) and the task branch.
 
-Manual session — act only on an explicit user command: commit (`коммит <task-number>`), push, close-out (`закрыть <task-number>`), `branch.switch <branch>`, worktree lifecycle («создай общий worktree [от <base>]» → `worktree.create`, «удали worktree» → `worktree.remove`), or WIP sync («синхронизируй WIP» → `wip.sync <branch>», «убери WIP-синк» → `wip.unsync <branch>`). Worktree creation/removal and WIP sync never run automatically. The target branch may be any existing branch, including `main`, `test`, and `develop`.
+Manual session — act only on an explicit user command: commit (`коммит <task-number>`), push, close-out (`закрыть <task-number>`), `branch.switch <branch>`, worktree lifecycle («создай общий worktree [от <base>]» → `worktree.create`, «подготовь кит в worktree [имя]» → `worktree.kit`, «удали worktree» → `worktree.remove`), or WIP sync («синхронизируй WIP» → `wip.sync <branch>», «убери WIP-синк» → `wip.unsync <branch>`). Worktree creation/removal, kit linking, and WIP sync never run automatically. The target branch may be any existing branch, including `main`, `test`, and `develop`.
 
 ### Branch names
 
@@ -75,7 +76,18 @@ All worktree and WIP paths are absolute. Determine `<main>` with `git worktree l
 
 1. `git fetch origin`.
 2. `git worktree add <main>/../cervart-wt/<имя> -b <branch> origin/<base>` — the absolute path is correct from any folder of the repository, the worktree included.
-3. Set the worktree up with cwd = worktree: `cp <main>/.npmrc .npmrc`, `corepack enable`, `corepack prepare pnpm@11.5.1 --activate`, `pnpm install`, `pnpm gen-env-<env>` (the env comes from the user's context).
+3. Link the agent kit — the probes and `ln -s` commands of `worktree.kit` (the next mode): `<wt>/.opencode → <main>/.opencode`, `<wt>/local.md → <main>/local.md`.
+4. Set the worktree up with cwd = worktree: `cp <main>/.npmrc .npmrc`, `corepack enable`, `corepack prepare pnpm@11.5.1 --activate`, `pnpm install`, `pnpm gen-env-<env>` (the env comes from the user's context).
+
+`worktree.kit [имя]` (default `agent`) — link the agent kit into an existing worktree (`<wt> = <main>/../cervart-wt/<имя>`, all paths absolute). The kit is the pair of symlinks `<wt>/.opencode → <main>/.opencode` (agents, skills, commands, plugins, `opencode.json`, the shared `.opencode/plans`, the kit's `node_modules`) and `<wt>/local.md → <main>/local.md` (initials for `plan`/`tdd`/`git-policy`):
+
+1. The worktree must exist (`git worktree list`); missing → `BLOCKED` «воркри отсутствует — сначала worktree.create».
+2. Probe each kit path (`ls -ld <wt>/.opencode`, `ls -ld <wt>/local.md`):
+   - missing → create the symlink: `ln -s <main>/.opencode <wt>/.opencode` (respectively `ln -s <main>/local.md <wt>/local.md`). Only these two forms, without `-f`/`-n`/`-sf`: `ln -s` on an existing path fails «File exists» — that is the overwrite guard, not an error to work around;
+   - exists and is a symlink into `<main>` → skip (idempotency);
+   - exists but is not a symlink into `<main>` → `BLOCKED` with the path; never overwrite.
+3. Control probe `ls -l <wt>/.opencode <wt>/local.md`: both lines show the targets in `<main>`.
+4. The report of the mode names it: after linking an `opencode service restart` is required (the `agent-config-guard` snapshot is bound to the process) — until the restart the worktree location does not see the agents.
 
 `branch.create <branch>` dispatched from inside a worktree (worktree-mode `tdd` entry): check the clean tree rule IN the worktree before creating the branch, then `git fetch origin` and `git switch -c <branch> origin/<base>` — the start point is always `origin/<base>` (the worktree HEAD may sit on the previous task's branch). `git pull --ff-only` is not needed in this mode.
 
@@ -83,7 +95,7 @@ All worktree and WIP paths are absolute. Determine `<main>` with `git worktree l
 
 1. The worktree must be clean: `git -C <wt> status --porcelain`; a dirty tree → ask the user, never force.
 2. If the session's cwd is inside the worktree being removed, report «сначала вернуть сессию в основную папку» (git refuses to delete its own cwd) and stop.
-3. `git worktree remove <абс-путь>`. Force forms (`-f`, `--force`) are forbidden.
+3. `git worktree remove <абс-путь>`. Force forms (`-f`, `--force`) are forbidden. The kit symlinks (`<wt>/.opencode`, `<wt>/local.md`) live inside the worktree and are removed together with it; the targets in `<main>` are not touched.
 
 ### WIP sync
 

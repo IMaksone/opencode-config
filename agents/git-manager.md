@@ -180,6 +180,8 @@ permissions:
   - { action: shell, resource: "pnpm install *", effect: allow }
   - { action: shell, resource: "pnpm gen-env-* *", effect: allow }
   - { action: shell, resource: "mkdir -p */.tmp/wip-sync", effect: allow }
+  - { action: shell, resource: "ln -s */Cervart/.opencode */cervart-wt/*/.opencode", effect: allow }
+  - { action: shell, resource: "ln -s */Cervart/local.md */cervart-wt/*/local.md", effect: allow }
   - { action: subagent, resource: "*", effect: deny }
   - { action: webfetch, resource: "*", effect: deny }
   - { action: websearch, resource: "*", effect: deny }
