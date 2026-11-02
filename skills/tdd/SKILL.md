@@ -29,6 +29,8 @@ Before the first dispatch and before **every** later dispatch, call the `agent_c
 
 The guard lives in the running opencode instance and its snapshot is bound to the **process**, not to a plugin load: agent files, skills, commands, `AGENTS.md`, `local.md` and root `opencode.json(c)` are snapshotted when the process starts. OpenCode reloads the plugin on every config save without re-taking that snapshot, so edits are not applied until the process restarts. Dispatch from a stale instance is blocked by the plugin and must be treated as `BLOCKED`, never retried.
 
+The check runs in the session's location. In worktree mode the kit (`.opencode`, `local.md`) is linked into the worktree as symlinks from `<main>` and needs `opencode service restart` after the linking — without a restart the agents of the worktree location are not visible.
+
 ### 1. Git preparation
 
 **Worktree mode** (`worktree: shared | dedicated(<имя>)`, the default) replaces the main-folder flow: the main folder is neither checked for dirt nor touched — no `branch.switch`, no `pull`, no `branch.create` there.
@@ -36,7 +38,7 @@ The guard lives in the running opencode instance and its snapshot is bound to th
 1. Dispatch `git-manager` with `git worktree list`: the plan's worktree is missing → ask the user «создать общий worktree?»; on confirmation dispatch `git-manager` with the first line `worktree.create <branch> <base> <имя>`.
 2. The worktree exists → dispatch `git-manager` with the first line `branch.create <branch>`: it runs with cwd = worktree — the clean-tree check happens there, the start point is always `origin/<base>`.
 3. Move the session: call the `session_move` tool with `directory: <абс-путь воркри>`. The target is validated by the `session-move-guard` plugin (the project root or one of its git worktrees); the move needs no prompt and is confirmed by the tool message in chat.
-4. After the move re-check the branch and the clean tree (cwd = worktree); on `BLOCKED` or a dirty worktree, stop.
+4. After the move re-check the branch and the clean tree (cwd = worktree); on `BLOCKED` or a dirty worktree, stop. Then check the agent kit: `ls -ld <wt>/.opencode <wt>/local.md` — both must be symlinks into `<main>`; otherwise `BLOCKED` «воркри без кита агентов: диспетчеризуй git-manager `worktree.kit <имя>`, затем `opencode service restart`».
 
 **Off mode** (`worktree: off`) keeps the main-folder flow:
 
