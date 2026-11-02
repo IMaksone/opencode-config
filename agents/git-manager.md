@@ -20,6 +20,7 @@ permissions:
   - { action: shell, resource: "git log *", effect: allow }
   - { action: shell, resource: "git show *", effect: allow }
   - { action: shell, resource: "git branch --list", effect: allow }
+  - { action: shell, resource: "git branch --list *", effect: allow }
   - { action: shell, resource: "git branch -a", effect: allow }
   - { action: shell, resource: "git branch -vv", effect: allow }
   - { action: shell, resource: "git branch --show-current", effect: allow }
@@ -133,6 +134,8 @@ permissions:
   - { action: shell, resource: "git -C * switch *", effect: allow }
   - { action: shell, resource: "git -C * add -N *", effect: allow }
   - { action: shell, resource: "git -C * add --intent-to-add *", effect: allow }
+  - { action: shell, resource: "git -C * branch --show-current", effect: allow }
+  - { action: shell, resource: "git -C * branch --list *", effect: allow }
   - { action: shell, resource: "git -C * switch -f*", effect: deny }
   - { action: shell, resource: "git -C * switch * -f*", effect: deny }
   - { action: shell, resource: "git -C * switch -C*", effect: deny }
@@ -159,6 +162,7 @@ permissions:
   - { action: shell, resource: "git -C * checkout*", effect: deny }
   - { action: shell, resource: "git -C * clean*", effect: deny }
   - { action: shell, resource: "git -C * worktree*", effect: deny }
+  - { action: shell, resource: "git -C * merge*", effect: deny }
   - { action: shell, resource: "git -C */.opencode add *", effect: allow }
   - { action: shell, resource: "git -C */.opencode commit -m *", effect: allow }
   - { action: shell, resource: "git -C */.opencode add -A*", effect: deny }

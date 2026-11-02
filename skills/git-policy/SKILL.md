@@ -24,6 +24,7 @@ Dispatched by `tdd` — the first line of the task is one of:
 - `коммит <task-number>`
 - `коммит-конфиг <T-id>`
 - `закрыть <task-number>`
+- `main.switch <branch>`
 - `worktree.create <branch> <base> [имя]`
 - `worktree.kit [имя]`
 - `worktree.remove [имя]`
@@ -34,7 +35,7 @@ A batch confirmation from the `tdd` user («продолжи всё») pre-cover
 
 From `tdd` you may operate only on the base branch (`test`, `main`, `develop`) and the task branch.
 
-Manual session — act only on an explicit user command: commit (`коммит <task-number>`), push, close-out (`закрыть <task-number>`), `branch.switch <branch>`, worktree lifecycle («создай общий worktree [от <base>]» → `worktree.create`, «подготовь кит в worktree [имя]» → `worktree.kit`, «удали worktree» → `worktree.remove`), or WIP sync («синхронизируй WIP» → `wip.sync <branch>», «убери WIP-синк» → `wip.unsync <branch>`). Worktree creation/removal, kit linking, and WIP sync never run automatically. The target branch may be any existing branch, including `main`, `test`, and `develop`.
+Manual session — act only on an explicit user command: commit (`коммит <task-number>`), push, close-out (`закрыть <task-number>`), `branch.switch <branch>`, main-folder switch («переключи основную папку на <branch>» → `main.switch <branch>`), worktree lifecycle («создай общий worktree [от <base>]» → `worktree.create`, «подготовь кит в worktree [имя]» → `worktree.kit`, «удали worktree» → `worktree.remove`), or WIP sync («синхронизируй WIP» → `wip.sync <branch>», «убери WIP-синк» → `wip.unsync <branch>`). Worktree creation/removal, kit linking, and WIP sync never run automatically. The target branch may be any existing branch, including `main`, `test`, and `develop`.
 
 ### Branch names
 
@@ -51,6 +52,7 @@ Pattern shape: `XX_<type>/<task-number>-<kebab-slug>`, for example `km_feat/2291
 - Create the task branch from the base branch named by the user or the plan.
 - Check that a branch exists with `git branch --list` or `git branch -a` before switching to it.
 - Create a new task branch with `git switch -c <branch>`.
+- Exception — parking branches `wt/<имя-воркри>`: local only, never pushed, outside the `XX_<type>/…` pattern; created only by the close-out parking step of `закрыть <task-number>`.
 
 ### Clean tree rule
 
@@ -66,7 +68,7 @@ Before `git switch`, run `git status --porcelain`.
 - After switching to the base branch, run `git pull --ff-only`. If it diverges, return `BLOCKED`.
 - Switching to `main`, `test`, or `develop` is allowed. Pushing to them is forbidden.
 - Never switch with a force or discard variant; they are forbidden.
-- In worktree mode the main folder is never switched or pulled (no `switch`/`pull` in `<main>`, `-C` forms included), and the task branch is never checked out in the main folder.
+- In worktree mode the main folder is never switched or pulled automatically (no `switch`/`pull` in `<main>`, `-C` forms included). The single exception is a user-confirmed `main.switch <branch>` after `закрыть` — a clean main tree is mandatory, and `git pull` in the main folder is never run at all. The task branch reaches the main folder only through this path.
 
 ### Worktree mode
 
@@ -96,6 +98,14 @@ All worktree and WIP paths are absolute. Determine `<main>` with `git worktree l
 1. The worktree must be clean: `git -C <wt> status --porcelain`; a dirty tree → ask the user, never force.
 2. If the session's cwd is inside the worktree being removed, report «сначала вернуть сессию в основную папку» (git refuses to delete its own cwd) and stop.
 3. `git worktree remove <абс-путь>`. Force forms (`-f`, `--force`) are forbidden. The kit symlinks (`<wt>/.opencode`, `<wt>/local.md`) live inside the worktree and are removed together with it; the targets in `<main>` are not touched.
+
+### Main folder switch
+
+`main.switch <branch>` switches the main folder to `<branch>`. It runs only on an explicit user command — an answer to the close-out question of `закрыть`, or a manual «переключи основную папку на <branch>»; never automatically.
+
+1. Guards: `git -C <main> status --porcelain` — the main tree must be clean (untracked files are allowed; tracked changes → `BLOCKED` with the paths); `git branch --list <branch>` — the branch must exist (missing → `BLOCKED`).
+2. `git -C <main> switch <branch>`. Force forms are forbidden; `git pull` in the main folder is never run.
+3. After the switch report the previous and the new branch of the main folder.
 
 ### WIP sync
 
@@ -153,7 +163,8 @@ If the tree has nothing to stage, return `DONE` and report that there is nothing
 
 1. Commit if the tree is dirty.
 2. Push the task branch.
-3. Report the branch name, commit hashes, push result, remaining uncommitted files, and a suggested MR title.
+3. Park the worktree (worktree mode only; in the main-folder flow there is nothing to park): clean-tree check in the worktree (`git status --porcelain` with cwd = worktree; tracked changes → `BLOCKED` with the paths). Then, with cwd = worktree: if the local branch `wt/<имя>` does not exist — `git fetch origin` and `git switch -c wt/<имя> origin/<base>`; if it exists — `git switch wt/<имя>`. `<base>` is the plan's parent branch (the `base` of the plan's Git section; for worktree plans — the base of `worktree.create`). If `<base>` is unknown (a manual close-out without a plan), ask the user; never infer it from branches. If `origin/<base>` is missing or unreachable, report it and leave the worktree on the task branch (no parking — the task branch is not freed; tell the user). The worktree is not removed; the parking branch is local, never pushed, never force-updated. The task branch is now free — it can be checked out in the main folder.
+4. Report the branch name, commit hashes, push result, remaining uncommitted files, and a suggested MR title. The report adds: the worktree is parked at `wt/<имя>` (a clone of `origin/<base>`, `<commit>`), and the question «Основную папку переключить на `<task-branch>`?» — an automatic switch is forbidden; only an explicit user confirmation starts `main.switch <task-branch>`.
 
 Never merge and never open or merge an MR.
 

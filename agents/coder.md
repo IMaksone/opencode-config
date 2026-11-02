@@ -86,19 +86,49 @@ permissions:
     resource: "pnpm lint *"
     effect: allow
   - action: shell
+    resource: "pnpm lint"
+    effect: allow
+  - action: shell
     resource: "pnpm exec eslint *"
     effect: allow
   - action: shell
     resource: "pnpm typecheck *"
     effect: allow
   - action: shell
+    resource: "pnpm typecheck"
+    effect: allow
+  - action: shell
     resource: "pnpm build *"
+    effect: allow
+  - action: shell
+    resource: "pnpm build"
     effect: allow
   - action: shell
     resource: "pnpm exec vitest run *"
     effect: allow
   - action: shell
     resource: "pnpm exec tsc *"
+    effect: allow
+  - action: shell
+    resource: "git status *"
+    effect: allow
+  - action: shell
+    resource: "git diff *"
+    effect: allow
+  - action: shell
+    resource: "git log *"
+    effect: allow
+  - action: shell
+    resource: "git show *"
+    effect: allow
+  - action: shell
+    resource: "git branch --show-current"
+    effect: allow
+  - action: shell
+    resource: "git branch --list *"
+    effect: allow
+  - action: shell
+    resource: "git rev-parse *"
     effect: allow
   - action: shell
     resource: "pnpm run lint"
