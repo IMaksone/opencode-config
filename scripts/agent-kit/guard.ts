@@ -8,7 +8,7 @@
  * `@opencode/plugin` so it is unit-testable with a fake context.
  */
 
-import { readFile } from 'node:fs/promises';
+import { readFile, realpath } from 'node:fs/promises';
 import { performance } from 'node:perf_hooks';
 import path from 'node:path';
 import process from 'node:process';
@@ -25,8 +25,14 @@ import {
 
 const SERVICE = 'agent-config-guard';
 
-/** One snapshot is kept per boot, so the storage cannot grow across restarts. */
-const STORAGE_KEY = 'snapshot/boot';
+/*
+ * One snapshot is kept per location: the key carries the canonical location
+ * directory and every boot overwrites that location's entry, so storage growth
+ * is bounded by the number of locations.
+ */
+function storageKeyOf(directory: string): string {
+  return `snapshot/boot:${directory}`;
+}
 
 /** V2 dispatch tool is `subagent`; `task` is its V1 name. */
 const DISPATCH_TOOLS = new Set(['subagent', 'task']);
@@ -131,12 +137,28 @@ function subagentNameOf(input: unknown): string | undefined {
   return typeof raw === 'string' && raw !== '' ? raw : undefined;
 }
 
+/** Real path of a directory, falling back to the raw path when it cannot resolve. */
+async function canonicalDirectory(directory: string): Promise<string> {
+  try {
+    return await realpath(directory);
+  }
+  catch {
+    return directory;
+  }
+}
+
 /**
  * Register the guard on a plugin context. Returns nothing: the V2 `setup` hook
  * accepts an empty cleanup.
  */
 export async function installGuard(ctx: GuardContext): Promise<void> {
-  const { directory } = ctx.location;
+  /*
+   * Canonicalize the location directory: `collectConfigFiles` resolves its
+   * files to real paths, so on macOS, where `os.tmpdir()` yields the `/var/...`
+   * symlink, the raw directory would disagree with the `/private/var/...` file
+   * keys and break `toRelative`, the agents filter and the storage key.
+   */
+  const directory = await canonicalDirectory(ctx.location.directory);
 
   const log = async (level: LogLevel, message: string, extra?: Record<string, unknown>): Promise<void> => {
     try {
@@ -163,7 +185,8 @@ export async function installGuard(ctx: GuardContext): Promise<void> {
 
   const bootId = bootID();
   const serverStartedAt = new Date(performance.timeOrigin).toISOString();
-  const stored = await ctx.storage.get(STORAGE_KEY) as StoredSnapshot | undefined;
+  const storageKey = storageKeyOf(directory);
+  const stored = await ctx.storage.get(storageKey) as StoredSnapshot | undefined;
   const reused = stored?.bootId === bootId && stored.snapshot !== undefined;
   const initialSnapshot = reused && stored ? stored.snapshot : await snapshot(await collectConfigFiles(directory));
 
@@ -173,7 +196,7 @@ export async function installGuard(ctx: GuardContext): Promise<void> {
    * `fresh: true` forever, so it is bound to the process instead.
    */
   if (!reused) {
-    await ctx.storage.set(STORAGE_KEY, { bootId, snapshot: initialSnapshot } satisfies StoredSnapshot);
+    await ctx.storage.set(storageKey, { bootId, snapshot: initialSnapshot } satisfies StoredSnapshot);
   }
 
   const toRelative = (file: string): string => path.relative(directory, file) || file;
@@ -195,7 +218,14 @@ export async function installGuard(ctx: GuardContext): Promise<void> {
     }
   };
 
-  const agentsDirectory = `${path.join(directory, '.opencode', 'agents')}${path.sep}`;
+  /*
+   * Canonicalize the agents directory the same way `collectConfigFiles`
+   * canonicalizes its files: through a symlinked `.opencode` the collected
+   * agent files resolve to the target location, so a raw prefix would never
+   * match them. A missing directory falls back to the raw join and matches
+   * nothing.
+   */
+  const agentsDirectory = `${await canonicalDirectory(path.join(directory, '.opencode', 'agents'))}${path.sep}`;
 
   const readAgents = async (): Promise<Record<string, AgentModelInfo>> => {
     const files = (await collectConfigFiles(directory))

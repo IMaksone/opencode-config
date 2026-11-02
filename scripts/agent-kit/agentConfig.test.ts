@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, realpath, rm, symlink, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -18,7 +18,7 @@ import {
 const temporaryRoots: string[] = [];
 
 async function createRoot(): Promise<string> {
-  const root = await mkdtemp(path.join(tmpdir(), 'agent-kit-'));
+  const root = await realpath(await mkdtemp(path.join(tmpdir(), 'agent-kit-')));
 
   temporaryRoots.push(root);
 
@@ -172,6 +172,25 @@ describe('collectConfigFiles', () => {
     expect(files).not.toContain(skillReadme);
     expect(files).not.toContain(unrelated);
     expect(files).not.toContain(plugin);
+  });
+
+  it('resolves a symlinked .opencode to the same files as the main location', async () => {
+    const main = await createRoot();
+    const worktree = await createRoot();
+
+    const coder = await writeFileAt(main, '.opencode/agents/coder.md');
+    const skill = await writeFileAt(main, '.opencode/skills/tdd/SKILL.md');
+
+    await symlink(path.join(main, '.opencode'), path.join(worktree, '.opencode'), 'dir');
+
+    const existingInsideOpencode = async (root: string): Promise<string[]> => {
+      const files = await collectConfigFiles(root);
+
+      return Object.keys(await snapshot(files)).filter(file => file.includes(`${path.sep}.opencode${path.sep}`)).sort();
+    };
+
+    expect(await existingInsideOpencode(worktree)).toEqual([coder, skill].sort());
+    expect(await existingInsideOpencode(worktree)).toEqual(await existingInsideOpencode(main));
   });
 });
 

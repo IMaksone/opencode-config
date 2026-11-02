@@ -5,7 +5,7 @@
  * runs both inside the local plugin and in CI.
  */
 
-import { readdir, stat } from 'node:fs/promises';
+import { readdir, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
 
 export interface AgentModelInfo {
@@ -118,6 +118,19 @@ async function listSkillFiles(directory: string): Promise<string[]> {
 }
 
 /**
+ * Real path of an existing file; a missing or unreadable file stays as-is so it
+ * keeps showing up in diffs instead of silently disappearing.
+ */
+async function resolveReal(file: string): Promise<string> {
+  try {
+    return await realpath(file);
+  }
+  catch {
+    return file;
+  }
+}
+
+/**
  * Parse flat `model` / `variant` / `mode` keys from a markdown frontmatter block.
  * Nested blocks (`permission:` and its indented keys) are ignored.
  */
@@ -190,9 +203,18 @@ export async function collectConfigFiles(root: string): Promise<string[]> {
     listFiles(path.join(root, COMMANDS_DIR)),
   ]);
 
+  /*
+   * Collected files already exist, so they resolve to their real path: a
+   * symlinked `.opencode` in a worktree and the main location then produce
+   * identical snapshot keys instead of two entries for the same files.
+   */
+  const collected = await Promise.all(
+    [...agentFiles, ...skillFiles, ...commandFiles].map(resolveReal),
+  );
+
   const rootFiles = ROOT_CONFIG_FILES.map(file => path.join(root, file));
 
-  return [...new Set([...agentFiles, ...skillFiles, ...commandFiles, ...rootFiles])].sort();
+  return [...new Set([...collected, ...rootFiles])].sort();
 }
 
 /** Map every existing file to its `mtimeMs`; missing files are skipped. */

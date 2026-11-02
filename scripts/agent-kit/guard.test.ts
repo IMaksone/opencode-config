@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, utimes, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, symlink, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -330,5 +330,42 @@ describe('installGuard', () => {
     await expect(
       toolHooks.get('execute.before')?.({ input: { subagent_type: 'tdd' }, tool: 'subagent' }),
     ).resolves.toBeUndefined();
+  });
+
+  it('keeps separate snapshots for two locations sharing one storage', async () => {
+    const main = await createRoot();
+    const worktree = await createRoot();
+
+    await createAgentFiles(main);
+    await symlink(path.join(main, '.opencode'), path.join(worktree, '.opencode'), 'dir');
+    await writeFileAt(worktree, 'local.md', 'km');
+
+    const storage = new Map<string, unknown>();
+    const mainLocation = createContext(main, { storage });
+    const worktreeLocation = createContext(worktree, { storage });
+
+    await installGuard(mainLocation.ctx);
+    await installGuard(worktreeLocation.ctx);
+
+    await expect(
+      worktreeLocation.sessionHooks.get('context')?.({ agent: 'tdd', sessionID: 'ses_wt' }),
+    ).resolves.toBeUndefined();
+
+    const worktreeReport = JSON.parse((await worktreeLocation.tools[0].execute({})).content) as {
+      checked: string[];
+      fresh: boolean;
+    };
+
+    expect(worktreeReport.fresh).toBe(true);
+    expect(worktreeReport.checked).toEqual([]);
+    expect(storage.size).toBe(2);
+
+    const mainReport = JSON.parse((await mainLocation.tools[0].execute({})).content) as {
+      checked: string[];
+      fresh: boolean;
+    };
+
+    expect(mainReport.fresh).toBe(true);
+    expect(mainReport.checked).toEqual([]);
   });
 });
