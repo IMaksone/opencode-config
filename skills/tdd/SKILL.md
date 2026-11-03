@@ -5,16 +5,16 @@ description: Use when orchestrating a test-first task: git preparation, contract
 
 # TDD orchestration
 
-You coordinate a test-first workflow. The only files you may create or edit are the contract and the progress file under `.tmp/contracts/**`. Never write production code or tests yourself, and never edit the plan.
+You coordinate a test-first workflow. The only files you may create or edit are the contract and the progress file under `<main>/.tmp/contracts/**`. Never write production code or tests yourself, and never edit the plan.
 
 Read `CODESTYLE.md`, `AGENTS.md`, the relevant files under `docs/`, and the plan before starting.
 
 ## Inputs
 
-- The plan from `<project root>/.opencode/plans/<slug>.md` or the user's task description. In worktree mode the plan lives in the main folder — read it by its absolute path.
+- The plan from `<main>/.opencode/plans/<slug>.md` — always read by its absolute path (the kit directory is shared with worktrees via symlinks); or the user's task description.
 - Task number, base branch, and task branch from the plan. If any of them is missing, stop and ask.
 - Initials from `local.md` in the repository root; if missing or invalid, stop and ask.
-- Worktree mode from the plan's Git section: `worktree: shared | dedicated(<имя>) | off`, default `shared`. The worktree name is `agent` for `shared` and `<имя>` for `dedicated`; the worktree lives at `<main>/../cervart-wt/<имя>`.
+- The execution place: the fixed set is the worktrees `agent` and `agent-2` (`<wt> = <main>/../cervart-wt/<имя>`) plus the main folder `<main>`. The plan never fixes it — the choice is asked from the user before git preparation (section 1) and recorded as the contract's first line (`Worktree:`). An existing contract with a `Worktree:` line is a run continuation: use the recorded choice without asking.
 
 ## Process
 
@@ -31,28 +31,37 @@ The guard lives in the running opencode instance and its snapshot is bound to th
 
 The check runs in the session's location. In worktree mode the kit (`.opencode`, `local.md`) is linked into the worktree as symlinks from `<main>` and needs `opencode service restart` after the linking — without a restart the agents of the worktree location are not visible.
 
-### 1. Git preparation
+### 1. Worktree choice
 
-**Worktree mode** (`worktree: shared | dedicated(<имя>)`, the default) replaces the main-folder flow: the main folder is neither checked for dirt nor touched — no `branch.switch`, no `pull`, no `branch.create` there.
+Before git preparation ask the user where the plan runs: the `question` tool with the header «Где исполняем план?» and exactly three options — «воркри agent», «воркри agent-2», «основная папка». If the `question` tool is unavailable, end the report with a text pause carrying the same question.
 
-1. Dispatch `git-manager` with `git worktree list`: the plan's worktree is missing → ask the user «создать общий worktree?»; on confirmation dispatch `git-manager` with the first line `worktree.create <branch> <base> <имя>`.
+- The contract already exists and contains a `Worktree:` line → do not ask: use the recorded choice (a run continuation, for example after a service restart).
+- Record the choice as the contract's first line: `Worktree: agent | agent-2 | main` with the absolute path of the execution place.
+- Invariant: `tdd` never offers to create a new worktree and never extends the option set — creation is only a direct user instruction (git-manager `worktree.create`).
+
+### 2. Git preparation
+
+**Worktree mode** (the user chose the worktree `<имя> ∈ {agent, agent-2}`) replaces the main-folder flow: the main folder is neither checked for dirt nor touched — no `branch.switch`, no `pull`, no `branch.create` there.
+
+1. Dispatch `git-manager` with `git worktree list`: the chosen worktree is missing → `BLOCKED` «воркри `<имя>` отсутствует; создание нового воркри — только по прямому указанию пользователя (git-manager `worktree.create`)».
 2. The worktree exists → dispatch `git-manager` with the first line `branch.create <branch>`: it runs with cwd = worktree — the clean-tree check happens there, the start point is always `origin/<base>`.
 3. Move the session: call the `session_move` tool with `directory: <абс-путь воркри>`. The target is validated by the `session-move-guard` plugin (the project root or one of its git worktrees); the move needs no prompt and is confirmed by the tool message in chat.
 4. After the move re-check the branch and the clean tree (cwd = worktree); on `BLOCKED` or a dirty worktree, stop. Then check the agent kit: `ls -ld <wt>/.opencode <wt>/local.md` — both must be symlinks into `<main>`; otherwise `BLOCKED` «воркри без кита агентов: диспетчеризуй git-manager `worktree.kit <имя>`, затем `opencode service restart`».
 
-**Off mode** (`worktree: off`) keeps the main-folder flow:
+**Off mode** (the user chose the main folder) keeps the main-folder flow:
 
-1. Check `git status --porcelain` and `git branch --show-current`.
-2. If there are staged or modified tracked files, stop and return `BLOCKED` with the paths. Untracked files are allowed.
-3. If the current branch is not the base branch, ask the user for confirmation. Only after explicit confirmation, dispatch `git-manager` with the first line `branch.switch <base>` and ask it to run `git pull --ff-only`. Then dispatch `git-manager` with the first line `branch.create <branch>`.
-4. If `git-manager` returns `BLOCKED`, stop. If it returns `DONE`, verify the current branch and continue.
-5. Without user confirmation, or on a dirty tree, stop.
+1. If the session cwd is not `<main>` (a previous run left the session in a worktree), move it back first: the `session_move` tool with `directory: <main>`.
+2. Check `git status --porcelain` and `git branch --show-current`.
+3. If there are staged or modified tracked files, stop and return `BLOCKED` with the paths. Untracked files are allowed.
+4. If the current branch is not the base branch, ask the user for confirmation. Only after explicit confirmation, dispatch `git-manager` with the first line `branch.switch <base>` and ask it to run `git pull --ff-only`. Then dispatch `git-manager` with the first line `branch.create <branch>`.
+5. If `git-manager` returns `BLOCKED`, stop. If it returns `DONE`, verify the current branch and continue.
+6. Without user confirmation, or on a dirty tree, stop.
 
 For a local-only plan (`branch: none`, the files are gitignored) there is nothing to switch or create: check `git status --porcelain` only and continue on the current branch — unless the plan's Git section explicitly requires commits through `коммит-конфиг` (a config plan); that section overrides the local-only skip.
 
-### 2. Progress file
+### 3. Progress file
 
-Read `.tmp/contracts/<slug>.progress.md` before the first task:
+Read `<main>/.tmp/contracts/<slug>.progress.md` by absolute path before the first task:
 
 - The file is missing → create it with one checkbox per plan task plus `G`, and a `Last:` line.
 - The file exists → compare its task IDs and order with the plan. A mismatch means the plan or the progress file changed behind the run's back: return `BLOCKED` and ask the user which one is authoritative. Never guess and never renumber by hand.
@@ -70,13 +79,13 @@ Format:
 Last: T1 done+committed, next T2
 ```
 
-Before starting a new plan: if `.tmp/contracts/` holds an unfinished progress file of another plan, offer the user to finish that plan to `G` first or to park it explicitly (a note in its `Last:` line). Never run a new plan in parallel with an open one.
+Before starting a new plan: if `<main>/.tmp/contracts/` holds an unfinished progress file of another plan, offer the user to finish that plan to `G` first or to park it explicitly (a note in its `Last:` line). Never run a new plan in parallel with an open one.
 
-In worktree mode the progress and contract files are written relative to the worktree's cwd (`.tmp/contracts/**` of the worktree) and disappear together with it — by design; the unfinished-plan check above looks at the worktree's `.tmp/contracts/`.
+The progress and contract files are always written to `<main>/.tmp/contracts/**` by absolute paths — regardless of the execution place; they survive worktree deletion. The unfinished-plan check above looks only at `<main>/.tmp/contracts/`. Creating and updating the progress file happens by the main folder's absolute paths.
 
-### 3. Contract
+### 4. Contract
 
-Write `.tmp/contracts/<slug>.md` **once** for the plan, with these sections:
+Write `<main>/.tmp/contracts/<slug>.md` by absolute path **once** for the plan. The file's first line is the recorded execution place — `Worktree: <agent|agent-2|main> (<абсолютный путь>)` — followed by these sections:
 
 - Behavior
 - API/types
@@ -89,7 +98,7 @@ Write `.tmp/contracts/<slug>.md` **once** for the plan, with these sections:
 
 The contract must be precise enough for `test-generator` to write tests without guessing selectors, identifiers, or API shapes.
 
-### 4. Task loop
+### 5. Task loop
 
 One iteration handles exactly one task from the plan section `Tasks`. A plan without a `Tasks` section is a single task for the whole plan (legacy fallback).
 
@@ -122,7 +131,7 @@ If a dispatch shows no progress, apply “Watchdog and restart”.
 
 «синхронизируй WIP» / «убери WIP-синк» are user-only commands, never automatic: dispatch `git-manager` with the first line `wip.sync <branch>` / `wip.unsync <branch>` and report the result. No other step of the flow triggers a sync.
 
-### 5. Final review and close-out
+### 6. Final review and close-out
 
 Review the committed work against the plan and the contract — `git diff <base>...HEAD` on the task branch — check the architecture, and make sure the tests were not adjusted to fit the implementation. Run the plan-wide checks: `pnpm build` and `pnpm test`.
 

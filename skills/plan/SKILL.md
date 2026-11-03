@@ -45,7 +45,6 @@ The Git section must contain:
 
 - `branch`: `XX_<type>/<task-number>-<slug>` or `none`. `<type>` is one of `feat`, `fix`, `chore`, `build`, `ci`, `docs`, `style`, `refactor`, `perf`, `test`, `testease`.
 - `base`: only the branch explicitly named by the user.
-- `worktree`: `shared | dedicated(<имя>) | off` — always written explicitly, default `shared` (`shared` → the worktree `<main>/../cervart-wt/agent`, `dedicated(<имя>)` → `<main>/../cervart-wt/<имя>`).
 - `tree`: `clean`, a list of paths, or `unknown`.
 - `sync`: `on` by default; `off` only with a written reason.
 - `switch`: only through `git-manager` after explicit user confirmation; `plan` never runs git write commands.
@@ -53,6 +52,7 @@ The Git section must contain:
 - `commit/push`: the commit of each task goes through `git-manager` at the task pause, with the task's `commit:` message and paths; push only through the confirmed close-out (`G`).
 - `merge/MR`: manual only.
 - `initials` and `task number`.
+- The execution place is never fixed by the plan: `tdd` asks the user before the run — the fixed set is воркри `agent`, воркри `agent-2`, основная папка — and records the choice in the contract.
 
 The mandatory `G: git close-out` task closes the plan: final review, the plan-wide checks, then `закрыть <task-number>` after explicit user confirmation. Every task is already committed at its own pause, so `G` expects a clean tree; a dirty tree at `G` is `BLOCKED` with the leftover paths. For a local-only plan (`branch: none`, the files are gitignored) `G` is a `git status` check in every affected repository and no commit is made.
 

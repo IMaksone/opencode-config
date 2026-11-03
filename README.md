@@ -16,7 +16,7 @@ Config for [opencode](https://opencode.ai). One repository, several variants in 
 - pnpm, Vitest, happy-dom, Testing Library, MSW.
 - Test-first workflow: plan → contract → tests → red/green implementation → review.
 - Git policy with task branches, per-task commits after user confirmation, close-out and manual MR.
-- Agent worktree workflow: a shared worktree at `../cervart-wt/agent`, branch from `origin/<base>`, WIP sync patches on the user's command.
+- Agent worktree workflow: the fixed set — worktrees `agent` and `agent-2` (`../cervart-wt/`) or the main folder; `tdd` asks the place before running a plan; contracts and progress live in `<main>/.tmp/contracts/`; branch from `origin/<base>`, WIP sync patches on the user's command.
 - OpenRouter models per agent.
 - Figma: remote MCP server and a read-only REST dump via `scripts/figma-dump.js`.
 
@@ -80,13 +80,14 @@ The config targets `opencode 2.1.4` and the native V2 shapes: `permissions` arra
 
 ## Agent worktree workflow
 
-Task work runs in a shared git worktree; the main folder is never switched or pulled.
+Task work runs in a user-chosen worktree (`agent` or `agent-2`) or the main folder; the main folder is never switched or pulled.
 
-1. On the user's request («создай общий worktree [от <base>]») `git-manager` runs `worktree.create <branch> <base>`: `git worktree add <main>/../cervart-wt/agent -b <branch> origin/<base>`, then links the agent kit — `<wt>/.opencode → <main>/.opencode` and `<wt>/local.md → <main>/local.md` (the worktree gets all agents, skills, commands, plugins, and the shared `.opencode/plans`; the kit's `node_modules` is shared — no separate `npm i` in the kit) — plus the dependency setup (`.npmrc`, `corepack`, `pnpm install`, `gen-env`). An existing worktree is kitted by the user's command «подготовь кит в worktree [имя]» (`worktree.kit`); after any linking — `opencode service restart` (the config-guard snapshot is bound to the process).
-2. `tdd` moves the session with the `session_move` tool (`directory: <абс-путь воркри>`; the target is validated by `session-move-guard`, the move is reported in chat, no prompt and no Code Mode) and dispatches `branch.create <branch>` with the start point `origin/<base>`.
-3. Tasks and per-task commits run in the worktree; the commits land on the branch in the main repository immediately (shared `.git`) — no commit transport is needed.
-4. WIP sync — only on the user's command: «синхронизируй WIP» applies the task's full diff from `origin/<base>` in the main folder as uncommitted changes (`wip.sync`), «убери WIP-синк» reverts it (`wip.unsync`). The applied state is probed with `git apply --check -R`; patch files accumulate in `<main>/.tmp/wip-sync/`.
-5. Close-out (`закрыть <task-number>`) runs in the worktree, then the session moves back to the main folder; a still-applied WIP patch is reported. The worktree stays until the user asks to remove it («удали worktree»).
+1. Creating and removing a worktree happens only on the user's direct instruction — the regular `tdd` flow neither creates nor offers a worktree. On the user's request («создай worktree <имя> [от <base>]») `git-manager` runs `worktree.create <branch> <base> <имя>`: `git worktree add <main>/../cervart-wt/<имя> -b <branch> origin/<base>`, then links the agent kit — `<wt>/.opencode → <main>/.opencode` and `<wt>/local.md → <main>/local.md` (the worktree gets all agents, skills, commands, plugins, and the shared `.opencode/plans`; the kit's `node_modules` is shared — no separate `npm i` in the kit) — plus the dependency setup (`.npmrc`, `corepack`, `pnpm install`, `gen-env`). An existing worktree is kitted by the user's command «подготовь кит в worktree [имя]» (`worktree.kit`); after any linking — `opencode service restart` (the config-guard snapshot is bound to the process).
+2. Before git preparation `tdd` asks the execution place with the `question` tool — the fixed set: воркри `agent`, воркри `agent-2`, основная папка — and records the choice as the contract's first line (`Worktree: …`); a run continuation uses the recorded choice without asking. The chosen worktree missing → `BLOCKED` (creation is a separate direct command). The main folder choice → the flow without a worktree: if the session cwd sits in a worktree, first `session_move` to `<main>`. Otherwise `tdd` moves the session with the `session_move` tool (`directory: <абс-путь воркри>`; the target is validated by `session-move-guard`, the move is reported in chat, no prompt and no Code Mode) and dispatches `branch.create <branch>` with the start point `origin/<base>`.
+3. Contracts and progress always live in `<main>/.tmp/contracts/**` (absolute paths) and survive worktree deletion.
+4. Tasks and per-task commits run in the worktree; the commits land on the branch in the main repository immediately (shared `.git`) — no commit transport is needed.
+5. WIP sync — only on the user's command: «синхронизируй WIP» applies the task's full diff from `origin/<base>` in the main folder as uncommitted changes (`wip.sync`), «убери WIP-синк» reverts it (`wip.unsync`). The applied state is probed with `git apply --check -R`; patch files accumulate in `<main>/.tmp/wip-sync/`.
+6. Close-out (`закрыть <task-number>`) runs in the worktree, then the session moves back to the main folder; a still-applied WIP patch is reported. The worktree stays until the user asks to remove it («удали worktree»).
 
 ## Install
 

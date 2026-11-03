@@ -16,6 +16,12 @@ permissions:
   - action: edit
     resource: ".tmp/contracts/*"
     effect: allow
+  - action: edit
+    resource: "*/Cervart/.tmp/contracts/*"
+    effect: allow
+  - action: external_directory
+    resource: "*/Cervart/.tmp/*"
+    effect: allow
   - action: shell
     resource: "*"
     effect: deny
