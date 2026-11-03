@@ -45,8 +45,8 @@ Before git preparation ask the user where the plan runs: the `question` tool wit
 
 1. Dispatch `git-manager` with `git worktree list`: the chosen worktree is missing → `BLOCKED` «воркри `<имя>` отсутствует; создание нового воркри — только по прямому указанию пользователя (git-manager `worktree.create`)».
 2. The worktree exists → dispatch `git-manager` with the first line `branch.create <branch>`: it runs with cwd = worktree — the clean-tree check happens there, the start point is always `origin/<base>`.
-3. Move the session: call the `session_move` tool with `directory: <абс-путь воркри>`. The target is validated by the `session-move-guard` plugin (the project root or one of its git worktrees); the move needs no prompt and is confirmed by the tool message in chat.
-4. After the move re-check the branch and the clean tree (cwd = worktree); on `BLOCKED` or a dirty worktree, stop. Then check the agent kit: `ls -ld <wt>/.opencode <wt>/local.md` — both must be symlinks into `<main>`; otherwise `BLOCKED` «воркри без кита агентов: диспетчеризуй git-manager `worktree.kit <имя>`, затем `opencode service restart`».
+3. Move the session: call the `session_move` tool with `directory: <абс-путь воркри>`. The target is validated by the `session-move-guard` plugin (the project root or one of its git worktrees); a worktree without the agent kit `<wt>/.opencode` is refused here — the reason names `worktree.kit` and the service restart; the move needs no prompt and is confirmed by the tool message in chat.
+4. After the move re-check the branch and the clean tree (cwd = worktree); on `BLOCKED` or a dirty worktree, stop. Then check the agent kit: `ls -ld <wt>/.opencode <wt>/local.md` — both must be symlinks into `<main>`; otherwise `BLOCKED` «воркри без кита агентов: диспетчеризуй git-manager `worktree.kit <имя>`, затем `opencode service restart`». The primary kit barrier sits before the move (step 3: `session-move-guard` refuses an unkitted worktree); this check stays as a duplicate — it catches the kit disappearing between the guard's pass and the completed move.
 
 **Off mode** (the user chose the main folder) keeps the main-folder flow:
 

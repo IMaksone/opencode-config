@@ -24,24 +24,64 @@ describe('validateMoveTarget', () => {
     })).toEqual({ ok: true, kind: 'project-root', real: ROOT });
   });
 
-  it('accepts a worktree proven by the gitdir marker', () => {
+  it('accepts a worktree proven by the gitdir marker and kitted with .opencode', () => {
     expect(validateMoveTarget({
       rawDirectory: WT,
       canonicalRoot: ROOT,
       targetReal: WT,
       targetIsDirectory: true,
       dotGitContent: `gitdir: ${ROOT}/.git/worktrees/agent\n`,
+      targetKitPresent: true,
     })).toEqual({ ok: true, kind: 'worktree', real: WT });
   });
 
-  it('accepts a worktree listed in the native inventory without a marker', () => {
+  it('accepts a worktree listed in the native inventory without a marker, kitted with .opencode', () => {
     expect(validateMoveTarget({
       rawDirectory: WT,
       canonicalRoot: ROOT,
       targetReal: WT,
       targetIsDirectory: true,
       worktreeRoots: [WT],
+      targetKitPresent: true,
     })).toEqual({ ok: true, kind: 'worktree', real: WT });
+  });
+
+  it('refuses a marker-proven worktree without the .opencode agent kit, naming worktree.kit', () => {
+    expect(validateMoveTarget({
+      rawDirectory: WT,
+      canonicalRoot: ROOT,
+      targetReal: WT,
+      targetIsDirectory: true,
+      dotGitContent: `gitdir: ${ROOT}/.git/worktrees/agent\n`,
+      targetKitPresent: false,
+    })).toEqual({
+      ok: false,
+      reason: 'target worktree has no .opencode agent kit; link it first: git-manager worktree.kit <name>, then opencode service restart',
+    });
+  });
+
+  it('refuses an inventory-listed worktree without the .opencode agent kit', () => {
+    expect(validateMoveTarget({
+      rawDirectory: WT,
+      canonicalRoot: ROOT,
+      targetReal: WT,
+      targetIsDirectory: true,
+      worktreeRoots: [WT],
+      targetKitPresent: false,
+    })).toEqual({
+      ok: false,
+      reason: 'target worktree has no .opencode agent kit; link it first: git-manager worktree.kit <name>, then opencode service restart',
+    });
+  });
+
+  it('ignores the kit fact for the project root — the root is the kit source', () => {
+    expect(validateMoveTarget({
+      rawDirectory: ROOT,
+      canonicalRoot: ROOT,
+      targetReal: ROOT,
+      targetIsDirectory: true,
+      targetKitPresent: false,
+    })).toEqual({ ok: true, kind: 'project-root', real: ROOT });
   });
 
   it.each([

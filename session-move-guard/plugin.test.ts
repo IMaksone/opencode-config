@@ -1,4 +1,4 @@
-import { mkdtemp, realpath, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, realpath, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -125,15 +125,20 @@ describe('installSessionMoveGuard', () => {
 
     // A shell worktree (created by `git worktree add`): a directory whose
     // `.git` is a file pointing into the main repository's worktrees store.
+    // The `.opencode` kit is a plain directory: every worktree target must
+    // carry one for the move to be allowed.
     worktree = await mkdtemp(path.join(tmpdir(), 'session-move-wt-'));
     await writeFile(path.join(worktree, '.git'), `gitdir: ${projectReal}/.git/worktrees/agent\n`);
+    await mkdir(path.join(worktree, '.opencode'));
 
     // A directory of another repository: the marker points somewhere else.
     foreign = await mkdtemp(path.join(tmpdir(), 'session-move-foreign-'));
     await writeFile(path.join(foreign, '.git'), 'gitdir: /tmp/other-project/.git/worktrees/agent\n');
 
     // An inventory-only worktree: known to the native list, no marker file.
+    // Kitted as well: the inventory verdict requires the kit too.
     inventory = await mkdtemp(path.join(tmpdir(), 'session-move-inv-'));
+    await mkdir(path.join(inventory, '.opencode'));
   });
 
   afterEach(async () => {
@@ -196,6 +201,55 @@ describe('installSessionMoveGuard', () => {
     expect(result.content).toBe(`session moved to ${inventoryReal} (worktree)`);
     expect(moveCalls).toEqual([{ sessionID: 'ses_1', directory: inventoryReal }]);
     expect(worktreeCalls.count).toBe(1);
+  });
+
+  it('refuses a marker-proven worktree without the .opencode agent kit', async () => {
+    const nokit = await mkdtemp(path.join(tmpdir(), 'session-move-nokit-'));
+
+    try {
+      await writeFile(path.join(nokit, '.git'), `gitdir: ${projectReal}/.git/worktrees/agent\n`);
+
+      const { logCalls, moveCalls, tool } = await install(project);
+
+      await expect(tool.execute({ directory: nokit }, TDD))
+        .rejects.toThrow('session_move: target worktree has no .opencode agent kit; '
+          + 'link it first: git-manager worktree.kit <name>, then opencode service restart');
+
+      expect(moveCalls).toHaveLength(0);
+
+      const refused = logCalls.filter(call => call.message === 'move refused');
+
+      expect(refused).toHaveLength(1);
+      expect(String(refused[0]?.extra?.reason)).toContain('worktree.kit');
+    }
+    finally {
+      await rm(nokit, { force: true, recursive: true });
+    }
+  });
+
+  it('accepts a worktree whose .opencode kit is a symlink to a directory', async () => {
+    const linkkit = await mkdtemp(path.join(tmpdir(), 'session-move-linkkit-'));
+
+    try {
+      await writeFile(path.join(linkkit, '.git'), `gitdir: ${projectReal}/.git/worktrees/agent\n`);
+
+      // The kit source must exist: the harness project has no `.opencode`,
+      // and a symlink to a missing target is a broken — absent — kit.
+      await mkdir(path.join(project, '.opencode'));
+      await symlink(path.join(project, '.opencode'), path.join(linkkit, '.opencode'));
+
+      const { moveCalls, tool } = await install(project);
+      const linkkitReal = await realpath(linkkit);
+
+      const result = await tool.execute({ directory: linkkit }, TDD);
+
+      expect(result.content).toBe(`session moved to ${linkkitReal} (worktree)`);
+      expect(moveCalls).toEqual([{ sessionID: 'ses_1', directory: linkkitReal }]);
+    }
+    finally {
+      await rm(linkkit, { force: true, recursive: true });
+      await rm(path.join(project, '.opencode'), { force: true, recursive: true });
+    }
   });
 
   it('refuses a relative path before any permission or fs work', async () => {

@@ -11,8 +11,11 @@
  * Validated targets: the canonical project root (return to the main folder)
  * and git worktrees of the project — proven by the linked-worktree marker
  * `<wt>/.git` → `gitdir: <root>/.git/worktrees/<name>` or by the native
- * opencode worktree inventory. The move itself is `ctx.session.move` — the
- * confirmation is the tool message in chat plus the server log.
+ * opencode worktree inventory, and each worktree must carry the agent kit
+ * (`<wt>/.opencode`; a missing or broken kit is refused before the move, so
+ * the session never lands in a location without the project agents). The
+ * move itself is `ctx.session.move` — the confirmation is the tool message
+ * in chat plus the server log.
  *
  * The opencode context is declared locally on purpose: this module stays free
  * of `@opencode/plugin` so it is unit-testable with a fake context.
@@ -257,6 +260,7 @@ export async function installSessionMoveGuard(ctx: SessionMoveGuardContext): Pro
 
     let targetIsDirectory = false;
     let dotGitContent: string | undefined;
+    let targetKitPresent: boolean | undefined;
 
     if (targetReal !== undefined) {
       try {
@@ -277,6 +281,18 @@ export async function installSessionMoveGuard(ctx: SessionMoveGuardContext): Pro
         catch {
           dotGitContent = undefined;
         }
+
+        // The agent kit of the target: `<target>/.opencode` as a directory or
+        // a symlink to one (`stat` follows symlinks). A missing or broken
+        // link means no kit — a session moved there cannot resolve the
+        // project agents. The fact gates worktree verdicts only; the project
+        // root is the kit source and ignores it.
+        try {
+          targetKitPresent = (await stat(path.join(targetReal, '.opencode'))).isDirectory();
+        }
+        catch {
+          targetKitPresent = false;
+        }
       }
     }
 
@@ -286,6 +302,7 @@ export async function installSessionMoveGuard(ctx: SessionMoveGuardContext): Pro
       targetReal,
       targetIsDirectory,
       dotGitContent,
+      targetKitPresent,
       worktreeRoots: await inventoryRoots(),
     });
 

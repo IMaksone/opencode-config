@@ -90,6 +90,7 @@ All worktree and WIP paths are absolute. Determine `<main>` with `git worktree l
    - exists but is not a symlink into `<main>` → `BLOCKED` with the path; never overwrite.
 3. Control probe `ls -l <wt>/.opencode <wt>/local.md`: both lines show the targets in `<main>`.
 4. The report of the mode names it: after linking an `opencode service restart` is required (the `agent-config-guard` snapshot is bound to the process) — until the restart the worktree location does not see the agents.
+5. Note: without the kit `session_move` into the worktree is rejected by the `session-move-guard` plugin before the move happens — the refusal reason points at this mode (`worktree.kit`) and the service restart, so an unkitted worktree can no longer silently take over a session.
 
 `branch.create <branch>` dispatched from inside a worktree (worktree-mode `tdd` entry): check the clean tree rule IN the worktree before creating the branch, then `git fetch origin` and `git switch -c <branch> origin/<base>` — the start point is always `origin/<base>` (the worktree HEAD may sit on the previous task's branch). `git pull --ff-only` is not needed in this mode.
 
