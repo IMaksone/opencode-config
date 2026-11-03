@@ -53,6 +53,7 @@ Pattern shape: `XX_<type>/<task-number>-<kebab-slug>`, for example `km_feat/2291
 - Check that a branch exists with `git branch --list` or `git branch -a` before switching to it.
 - Create a new task branch with `git switch -c <branch>`.
 - Exception — parking branches `wt/<имя-воркри>`: local only, never pushed, outside the `XX_<type>/…` pattern; created only by the close-out parking step of `закрыть <task-number>`.
+- Invariant: neither a task branch nor a parking branch ever has an upstream. Any `origin/<base>` start point is used only with `--no-track`: otherwise `branch.autoSetupMerge` silently sets the upstream to `origin/<base>`, which makes `git pull` on the branch silently merge the base and an upstream-following push move the branch into `test` with no merge commit.
 
 ### Clean tree rule
 
@@ -77,7 +78,7 @@ All worktree and WIP paths are absolute. Determine `<main>` with `git worktree l
 `worktree.create <branch> <base> [имя]` (default `agent`):
 
 1. `git fetch origin`.
-2. `git worktree add <main>/../cervart-wt/<имя> -b <branch> origin/<base>` — the absolute path is correct from any folder of the repository, the worktree included.
+2. `git worktree add <main>/../cervart-wt/<имя> -b <branch> --no-track origin/<base>` — the absolute path is correct from any folder of the repository, the worktree included.
 3. Link the agent kit — the probes and `ln -s` commands of `worktree.kit` (the next mode): `<wt>/.opencode → <main>/.opencode`, `<wt>/local.md → <main>/local.md`.
 4. Set the worktree up with cwd = worktree: `cp <main>/.npmrc .npmrc`, `corepack enable`, `corepack prepare pnpm@11.5.1 --activate`, `pnpm install`, `pnpm gen-env-<env>` (the env comes from the user's context).
 
@@ -92,7 +93,7 @@ All worktree and WIP paths are absolute. Determine `<main>` with `git worktree l
 4. The report of the mode names it: after linking an `opencode service restart` is required (the `agent-config-guard` snapshot is bound to the process) — until the restart the worktree location does not see the agents.
 5. Note: without the kit `session_move` into the worktree is rejected by the `session-move-guard` plugin before the move happens — the refusal reason points at this mode (`worktree.kit`) and the service restart, so an unkitted worktree can no longer silently take over a session.
 
-`branch.create <branch>` dispatched from inside a worktree (worktree-mode `tdd` entry): check the clean tree rule IN the worktree before creating the branch, then `git fetch origin` and `git switch -c <branch> origin/<base>` — the start point is always `origin/<base>` (the worktree HEAD may sit on the previous task's branch). `git pull --ff-only` is not needed in this mode.
+`branch.create <branch>` dispatched from inside a worktree (worktree-mode `tdd` entry): check the clean tree rule IN the worktree before creating the branch, then `git fetch origin` and `git switch --no-track -c <branch> origin/<base>` — the start point is always `origin/<base>` (the worktree HEAD may sit on the previous task's branch). `git pull --ff-only` is not needed in this mode.
 
 `worktree.remove [имя]` — only on an explicit user request («удали worktree»):
 
@@ -164,7 +165,7 @@ If the tree has nothing to stage, return `DONE` and report that there is nothing
 
 1. Commit if the tree is dirty.
 2. Push the task branch.
-3. Park the worktree (worktree mode only; in the main-folder flow there is nothing to park): clean-tree check in the worktree (`git status --porcelain` with cwd = worktree; tracked changes → `BLOCKED` with the paths). Then, with cwd = worktree: if the local branch `wt/<имя>` does not exist — `git fetch origin` and `git switch -c wt/<имя> origin/<base>`; if it exists — `git switch wt/<имя>`. `<base>` is the plan's parent branch (the `base` of the plan's Git section; for worktree plans — the base of `worktree.create`). If `<base>` is unknown (a manual close-out without a plan), ask the user; never infer it from branches. If `origin/<base>` is missing or unreachable, report it and leave the worktree on the task branch (no parking — the task branch is not freed; tell the user). The worktree is not removed; the parking branch is local, never pushed, never force-updated. The task branch is now free — it can be checked out in the main folder.
+3. Park the worktree (worktree mode only; in the main-folder flow there is nothing to park): clean-tree check in the worktree (`git status --porcelain` with cwd = worktree; tracked changes → `BLOCKED` with the paths). Then, with cwd = worktree: if the local branch `wt/<имя>` does not exist — `git fetch origin` and `git switch --no-track -c wt/<имя> origin/<base>`; if it exists — `git switch wt/<имя>`. `<base>` is the plan's parent branch (the `base` of the plan's Git section; for worktree plans — the base of `worktree.create`). If `<base>` is unknown (a manual close-out without a plan), ask the user; never infer it from branches. If `origin/<base>` is missing or unreachable, report it and leave the worktree on the task branch (no parking — the task branch is not freed; tell the user). The worktree is not removed; the parking branch is local, never pushed, never force-updated. The task branch is now free — it can be checked out in the main folder.
 4. Report the branch name, commit hashes, push result, remaining uncommitted files, and a suggested MR title. The report adds: the worktree is parked at `wt/<имя>` (a clone of `origin/<base>`, `<commit>`), and the question «Основную папку переключить на `<task-branch>`?» — an automatic switch is forbidden; only an explicit user confirmation starts `main.switch <task-branch>`.
 
 Never merge and never open or merge an MR.
