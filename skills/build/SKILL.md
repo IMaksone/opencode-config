@@ -69,6 +69,15 @@ Success criteria:
 
 Token warning: one snapshot per check — do not re-request a snapshot without page changes; prefer `browser_browser_find` to locate elements.
 
+## Deletions
+
+Delete files only when the task explicitly lists them, and only with the `delete_file` tool:
+
+- Shell `rm`, `git rm`, and writing an empty file instead of a deletion are forbidden.
+- The deletion list comes from the plan or the task; never pick files yourself. A file outside the list → `BLOCKED` with the requirement reported back to the caller.
+- Test files (`*.test.ts`, `*.test.tsx`, `*.testHelpers.ts`, `src/shared/testing/**`, `src/shared/api/testing/**`) may be deleted only when the task explicitly allows it — the tool asks the user to confirm every such deletion; a refusal → `BLOCKED`.
+- After a deletion, clean up the imports and exports it orphans so the task stays green.
+
 ## Output
 
 `DONE` or `BLOCKED` with a short summary of the changes, the exact commands run, and their results. Answer the user in Russian.

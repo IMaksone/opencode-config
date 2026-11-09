@@ -148,6 +148,27 @@ permissions:
   - action: delete
     resource: "*"
     effect: deny
+  - action: delete
+    resource: "src/*.ts"
+    effect: allow
+  - action: delete
+    resource: "src/*.tsx"
+    effect: allow
+  - action: delete
+    resource: "src/*.test.ts"
+    effect: ask
+  - action: delete
+    resource: "src/*.test.tsx"
+    effect: ask
+  - action: delete
+    resource: "src/*.testHelpers.ts"
+    effect: ask
+  - action: delete
+    resource: "src/shared/testing/*"
+    effect: ask
+  - action: delete
+    resource: "src/shared/api/testing/*"
+    effect: ask
   - action: browser_*
     resource: "*"
     effect: deny
