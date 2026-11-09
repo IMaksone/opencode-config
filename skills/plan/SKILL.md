@@ -82,12 +82,12 @@ Autotests are not required for Markdown and config tasks: `tests: existing suite
 
 ## Deletions
 
-A task may delete files only through the `delete_file` tool of the `cervart.delete-tool` plugin: the plan decides what is deleted, `coder` only executes the list.
+The plan decides what is deleted. Inside the `delete_file` allowed set the executor is `coder` (or `build`); outside it the deletion runs as `git rm` by `git-manager` at the task commit.
 
 - List every deletion explicitly: add the path to the task's `affected files` and a step «удалить `<path>` инструментом `delete_file`».
-- Only existing files under `src/` with the `.ts`/`.tsx` extension may be planned for deletion. Directories, other extensions, and paths outside `src/` are rejected by the tool — never plan them.
+- Only existing files under `src/` with the `.ts`/`.tsx` extension may be planned for `delete_file`. Directories, other extensions, and paths outside `src/` are rejected by the tool — plan them through the `git rm` route below.
 - Deleting test files (`*.test.ts`, `*.test.tsx`, `*.testHelpers.ts`, `src/shared/testing/**`, `src/shared/api/testing/**`) requires separate user permission: mark such a step with «требует разрешения пользователя — подтвердится ask-промптом».
-- A deletion outside the allowed set: do not plan it, and record the need in Risks or Out of scope instead.
+- A deletion outside the `delete_file` allowed set (not under `src/`, or not `.ts`/`.tsx`): plan it explicitly as «удалить `<path>` через `git rm` на коммите задачи (исполнитель — git-manager)». The decision still belongs to the plan; `tdd` passes the list to `git-manager` together with the task commit.
 - The plan never deletes files itself and never instructs shell `rm`.
 
 ## Output

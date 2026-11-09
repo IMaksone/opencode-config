@@ -91,7 +91,7 @@ Shell fallback — the first `shell` rule of an agent (`resource: "*"`; the last
 - `plan`, `build`, `tdd` → **ask**: a command matching no allow rule prompts the user instead of failing with a silent `permission.rejected`. Ask requires a live client — never run these agents headless: an unanswered prompt hangs until the watchdog aborts the session.
 - `coder`, `test-generator`, `git-manager` → **deny**: a subagent has nobody to answer its prompt, and `git-manager` also works headless in the worktree kit.
 
-Deletions: `build` mirrors `coder` — `delete_file` on `src/**` `.ts`/`.tsx` files runs without a prompt, and test files (`*.test.ts`, `*.test.tsx`, `*.testHelpers.ts`, `src/shared/testing/**`, `src/shared/api/testing/**`) ask the user on every deletion (`save: []`, nothing is remembered); every other agent keeps the global `delete` deny (see `delete-tool` above).
+Deletions: `build` mirrors `coder` — `delete_file` on `src/**` `.ts`/`.tsx` files runs without a prompt, and test files (`*.test.ts`, `*.test.tsx`, `*.testHelpers.ts`, `src/shared/testing/**`, `src/shared/api/testing/**`) ask the user on every deletion (`save: []`, nothing is remembered); every other agent keeps the global `delete` deny (see `delete-tool` above). Files outside the `delete_file` set (not under `src/`, or not `.ts`/`.tsx`) go through `git rm` by `git-manager` at the task commit — the sanctioned route for out-of-`src` deletions, always on the explicit list from the plan (`git rm *` / `git -C * rm *` in `agents/git-manager.md`).
 
 ## Agent worktree workflow
 

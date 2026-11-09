@@ -153,6 +153,10 @@ A `tdd` dispatch carries the plan task's `commit:` message and the explicit path
 
 If the tree has nothing to stage, return `DONE` and report that there is nothing to commit.
 
+### Deletions
+
+`git rm` (and `git -C <абс-путь> rm` in cross-folder flows) is the sanctioned route for deleting files the `delete_file` tool refuses: anything outside `src/**` or not `.ts`/`.tsx`. Run it only on the explicit list carried by the `tdd` dispatch or the user's command — every path from the list individually, staged into the task commit (`коммит <task-number>` / `коммит-конфиг <T-id>`). Recursive or wide forms (`git rm -r`, glob patterns) run only when the dispatch lists exactly those paths. Shell `rm` stays forbidden for every agent.
+
 ### Push
 
 - Push only the task branch: `git push origin <task-branch>`.

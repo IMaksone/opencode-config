@@ -41,6 +41,7 @@ permissions:
   - { action: shell, resource: "git switch -c *", effect: allow }
   - { action: shell, resource: "git switch *", effect: allow }
   - { action: shell, resource: "git push origin *", effect: allow }
+  - { action: shell, resource: "git rm *", effect: allow }
   - { action: shell, resource: "git merge *", effect: deny }
   - { action: shell, resource: "git rebase *", effect: deny }
   - { action: shell, resource: "git cherry-pick *", effect: deny }
@@ -145,6 +146,7 @@ permissions:
   - { action: shell, resource: "git -C * add --intent-to-add *", effect: allow }
   - { action: shell, resource: "git -C * branch --show-current", effect: allow }
   - { action: shell, resource: "git -C * branch --list *", effect: allow }
+  - { action: shell, resource: "git -C * rm *", effect: allow }
   - { action: shell, resource: "git -C * switch -f*", effect: deny }
   - { action: shell, resource: "git -C * switch * -f*", effect: deny }
   - { action: shell, resource: "git -C * switch -C*", effect: deny }
