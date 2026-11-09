@@ -21,7 +21,7 @@ permissions:
     effect: allow
   - action: shell
     resource: "*"
-    effect: deny
+    effect: ask
   - action: shell
     resource: "cat *"
     effect: allow

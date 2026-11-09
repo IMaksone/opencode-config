@@ -86,6 +86,11 @@ Common parts of the agent shell allowlists. All six agents (`plan`, `build`, `td
 - **Read-only git**: `plan`, `build`, `tdd`, `coder` carry `git -C * status *`, `git -C * diff *`, `git -C * log *`, `git -C * show *`; `git-manager` carries `git -C * log *` and `git -C * show *` (`git -C * status *` / `git -C * diff *` it already had); `test-generator` has no git rules. Plain read-only git (`git status *` etc.) stays as defined per agent.
 - **Verification commands**: `pnpm domains:check *` for `plan`, `build`, `tdd`, `coder`; `pnpm typecheck *` for `plan`; exact `pnpm lint` / `pnpm exec eslint` rules are normalized to `pnpm lint *` / `pnpm exec eslint *` everywhere (a ` *` pattern matches the bare command too). Full `pnpm test` / `pnpm test-coverage` stay orchestrator-only (`build`, `tdd`): the `implement` / `test-first` skills exclude them for `coder` / `test-generator`.
 
+Shell fallback — the first `shell` rule of an agent (`resource: "*"`; the last matching rule wins, so the specific allows placed after it still pass):
+
+- `plan`, `build`, `tdd` → **ask**: a command matching no allow rule prompts the user instead of failing with a silent `permission.rejected`. Ask requires a live client — never run these agents headless: an unanswered prompt hangs until the watchdog aborts the session.
+- `coder`, `test-generator`, `git-manager` → **deny**: a subagent has nobody to answer its prompt, and `git-manager` also works headless in the worktree kit.
+
 ## Agent worktree workflow
 
 Task work runs in a user-chosen worktree (`agent` or `agent-2`) or the main folder; the main folder is never switched or pulled.
