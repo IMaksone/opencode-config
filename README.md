@@ -78,6 +78,14 @@ The config targets `opencode 2.1.4` and the native V2 shapes: `permissions` arra
 5. `session_move` with `directory: <main>` moves the session back; `execute` (Code Mode) still fails for `tdd` (deny).
 6. `agent_config_check` reports `fresh: true`.
 
+## Shell permissions and deletions
+
+Common parts of the agent shell allowlists. All six agents (`plan`, `build`, `tdd`, `coder`, `test-generator`, `git-manager`) carry them; agent-specific rules (pnpm builds, the Figma dump, git write operations) stay per agent.
+
+- **Safe-read base**: `cat *`, `echo *`, `grep *`, `head *`, `ls *`, `pwd`, `rg *`, `sed -n *`, `sort *`, `tail *`, `uniq *`, `wc *`, `which *` — every pattern with ` *` except `pwd`. The permission scanner checks a compound command part by part, so the base also covers pipe and separator segments (`| sort | uniq -c`, `; echo '---'`). `find` is deliberately excluded: its `-exec`/`-execdir`/`-ok` actions execute external commands and would bypass the delete model — use the `glob`/`grep` tools, `ls -R`, or `rg --files` instead.
+- **Read-only git**: `plan`, `build`, `tdd`, `coder` carry `git -C * status *`, `git -C * diff *`, `git -C * log *`, `git -C * show *`; `git-manager` carries `git -C * log *` and `git -C * show *` (`git -C * status *` / `git -C * diff *` it already had); `test-generator` has no git rules. Plain read-only git (`git status *` etc.) stays as defined per agent.
+- **Verification commands**: `pnpm domains:check *` for `plan`, `build`, `tdd`, `coder`; `pnpm typecheck *` for `plan`; exact `pnpm lint` / `pnpm exec eslint` rules are normalized to `pnpm lint *` / `pnpm exec eslint *` everywhere (a ` *` pattern matches the bare command too). Full `pnpm test` / `pnpm test-coverage` stay orchestrator-only (`build`, `tdd`): the `implement` / `test-first` skills exclude them for `coder` / `test-generator`.
+
 ## Agent worktree workflow
 
 Task work runs in a user-chosen worktree (`agent` or `agent-2`) or the main folder; the main folder is never switched or pulled.

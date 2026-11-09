@@ -29,6 +29,9 @@ permissions:
     resource: "cat *"
     effect: allow
   - action: shell
+    resource: "echo *"
+    effect: allow
+  - action: shell
     resource: "grep *"
     effect: allow
   - action: shell
@@ -38,13 +41,28 @@ permissions:
     resource: "ls *"
     effect: allow
   - action: shell
+    resource: "pwd"
+    effect: allow
+  - action: shell
     resource: "rg *"
+    effect: allow
+  - action: shell
+    resource: "sed -n *"
+    effect: allow
+  - action: shell
+    resource: "sort *"
     effect: allow
   - action: shell
     resource: "tail *"
     effect: allow
   - action: shell
+    resource: "uniq *"
+    effect: allow
+  - action: shell
     resource: "wc *"
+    effect: allow
+  - action: shell
+    resource: "which *"
     effect: allow
   - action: shell
     resource: "git status *"
@@ -80,10 +98,25 @@ permissions:
     resource: "git ls-files *"
     effect: allow
   - action: shell
+    resource: "git -C * status *"
+    effect: allow
+  - action: shell
+    resource: "git -C * diff *"
+    effect: allow
+  - action: shell
+    resource: "git -C * log *"
+    effect: allow
+  - action: shell
+    resource: "git -C * show *"
+    effect: allow
+  - action: shell
     resource: "pnpm lint *"
     effect: allow
   - action: shell
     resource: "pnpm typecheck *"
+    effect: allow
+  - action: shell
+    resource: "pnpm domains:check *"
     effect: allow
   - action: shell
     resource: "pnpm build *"

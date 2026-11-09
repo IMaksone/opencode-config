@@ -9,12 +9,19 @@ permissions:
   - { action: shell, resource: "*", effect: deny }
   - { action: shell, resource: "ls *", effect: allow }
   - { action: shell, resource: "cat *", effect: allow }
+  - { action: shell, resource: "grep *", effect: allow }
+  - { action: shell, resource: "echo *", effect: allow }
+  - { action: shell, resource: "pwd", effect: allow }
   - { action: shell, resource: "head *", effect: allow }
   - { action: shell, resource: "tail *", effect: allow }
+  - { action: shell, resource: "sed -n *", effect: allow }
+  - { action: shell, resource: "sort *", effect: allow }
+  - { action: shell, resource: "uniq *", effect: allow }
+  - { action: shell, resource: "which *", effect: allow }
   - { action: shell, resource: "rg *", effect: allow }
   - { action: shell, resource: "wc *", effect: allow }
-  - { action: shell, resource: "pnpm lint", effect: allow }
-  - { action: shell, resource: "pnpm exec eslint", effect: allow }
+  - { action: shell, resource: "pnpm lint *", effect: allow }
+  - { action: shell, resource: "pnpm exec eslint *", effect: allow }
   - { action: shell, resource: "git status *", effect: allow }
   - { action: shell, resource: "git diff *", effect: allow }
   - { action: shell, resource: "git log *", effect: allow }
@@ -130,6 +137,8 @@ permissions:
   - { action: shell, resource: "git -C * status *", effect: allow }
   - { action: shell, resource: "git -C * rev-parse *", effect: allow }
   - { action: shell, resource: "git -C * diff *", effect: allow }
+  - { action: shell, resource: "git -C * log *", effect: allow }
+  - { action: shell, resource: "git -C * show *", effect: allow }
   - { action: shell, resource: "git -C * apply *", effect: allow }
   - { action: shell, resource: "git -C * switch *", effect: allow }
   - { action: shell, resource: "git -C * add -N *", effect: allow }
