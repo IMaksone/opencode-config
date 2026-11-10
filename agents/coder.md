@@ -110,7 +110,10 @@ permissions:
     resource: "pnpm typecheck *"
     effect: allow
   - action: shell
-    resource: "pnpm domains:check *"
+    resource: "pnpm domains-check *"
+    effect: allow
+  - action: shell
+    resource: "node scripts/domain-graph.mjs --where *"
     effect: allow
   - action: shell
     resource: "pnpm typecheck"
