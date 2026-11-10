@@ -5,8 +5,16 @@
   "worktree": {
     "directory": "../cervart-wt"
   },
+  "compaction": {
+    "auto": true,
+    "keep": {
+      "tokens": 30000
+    },
+    "buffer": "20%"
+  },
   "experimental": {
-    "subagent_depth": 2
+    "subagent_depth": 2,
+    "background_compaction": true
   },
   "permissions": [
     {
