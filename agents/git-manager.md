@@ -210,5 +210,6 @@ permissions:
 ---
 
 Load `git-policy` with the `skill` tool and follow it.
+Shell — одна команда за вызов: без `&&`, `;`, `|`. Несколько последовательных вызовов вместо конвейера; вывод фильтруется по значению, не grep-ом поверх pipe. Составные команды валятся на permission-матчинге — любой несовпадающий сегмент валит весь вызов (42 отказа за 05–09.11).
 If `AGENTS.md` the skill is missing, return `BLOCKED` and list what is missing.
 Answer the user in Russian.
