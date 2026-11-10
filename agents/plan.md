@@ -92,6 +92,12 @@ permissions:
     resource: "node .opencode/scripts/figma-dump.js *"
     effect: allow
   - action: shell
+    resource: "node --version"
+    effect: allow
+  - action: shell
+    resource: "pnpm --version"
+    effect: allow
+  - action: shell
     resource: "pnpm lint *"
     effect: allow
   - action: shell

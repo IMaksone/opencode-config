@@ -22,6 +22,8 @@ permissions:
   - { action: shell, resource: "wc *", effect: allow }
   - { action: shell, resource: "pnpm lint *", effect: allow }
   - { action: shell, resource: "pnpm exec eslint *", effect: allow }
+  - { action: shell, resource: "node --version", effect: allow }
+  - { action: shell, resource: "pnpm --version", effect: allow }
   - { action: shell, resource: "git status *", effect: allow }
   - { action: shell, resource: "git diff *", effect: allow }
   - { action: shell, resource: "git log *", effect: allow }
@@ -34,6 +36,9 @@ permissions:
   - { action: shell, resource: "git remote -v", effect: allow }
   - { action: shell, resource: "git rev-parse *", effect: allow }
   - { action: shell, resource: "git ls-files *", effect: allow }
+  - { action: shell, resource: "git ls-tree *", effect: allow }
+  - { action: shell, resource: "git merge-base *", effect: allow }
+  - { action: shell, resource: "git cat-file *", effect: allow }
   - { action: shell, resource: "git fetch *", effect: allow }
   - { action: shell, resource: "git pull --ff-only *", effect: allow }
   - { action: shell, resource: "git add *", effect: allow }
@@ -52,6 +57,7 @@ permissions:
   - { action: shell, resource: "git checkout .", effect: deny }
   - { action: shell, resource: "git restore *", effect: deny }
   - { action: shell, resource: "git stash *", effect: deny }
+  - { action: shell, resource: "git stash list", effect: allow }
   - { action: shell, resource: "git branch -d *", effect: deny }
   - { action: shell, resource: "git branch -D *", effect: deny }
   - { action: shell, resource: "git branch -m *", effect: deny }

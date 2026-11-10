@@ -101,6 +101,12 @@ permissions:
     resource: "which *"
     effect: allow
   - action: shell
+    resource: "node --version"
+    effect: allow
+  - action: shell
+    resource: "pnpm --version"
+    effect: allow
+  - action: shell
     resource: "pnpm lint *"
     effect: allow
   - action: shell
@@ -150,6 +156,9 @@ permissions:
     effect: allow
   - action: shell
     resource: "git rev-parse *"
+    effect: allow
+  - action: shell
+    resource: "git ls-tree *"
     effect: allow
   - action: shell
     resource: "git -C * status *"

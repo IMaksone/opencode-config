@@ -110,6 +110,12 @@ permissions:
     resource: "git -C * show *"
     effect: allow
   - action: shell
+    resource: "node --version"
+    effect: allow
+  - action: shell
+    resource: "pnpm --version"
+    effect: allow
+  - action: shell
     resource: "pnpm lint *"
     effect: allow
   - action: shell
