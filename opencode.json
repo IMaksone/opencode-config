@@ -41,6 +41,11 @@
       "action": "shell",
       "resource": "pnpm exec eslint *",
       "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "node .opencode/skills/figma-design/scripts/*",
+      "effect": "allow"
     }
   ],
   "providers": {
