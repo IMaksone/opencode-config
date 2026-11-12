@@ -238,6 +238,30 @@ describe('installGuard', () => {
     expect(report.checked).toEqual([path.join('.opencode', 'agents', 'coder.md')]);
   });
 
+  it('keeps a dispatch working when hot-reloaded context files change', async () => {
+    const root = await createRoot();
+
+    await createAgentFiles(root);
+
+    const { ctx, toolHooks, tools } = createContext(root);
+
+    await installGuard(ctx);
+
+    // The incident scenario: AGENTS.md edited and local.md rewritten after the
+    // snapshot — both are hot-reloaded context files, the guard must not care.
+    await writeFileAt(root, 'AGENTS.md', '# Agents (edited)');
+    await writeFileAt(root, 'local.md', 'km\n# hot reload probe');
+
+    await expect(
+      toolHooks.get('execute.before')?.({ input: { subagent_type: 'coder' }, tool: 'subagent' }),
+    ).resolves.toBeUndefined();
+
+    const report = JSON.parse((await tools[0].execute({})).content) as { checked: string[]; fresh: boolean };
+
+    expect(report.fresh).toBe(true);
+    expect(report.checked).toEqual([]);
+  });
+
   it('blocks a dispatch to a subagent without a model', async () => {
     const root = await createRoot();
 

@@ -30,11 +30,14 @@ const COMMANDS_DIR = path.join('.opencode', 'commands');
 /**
  * Root config candidates are always returned, even when missing: a file created
  * after the snapshot must show up as an addition on the next collection.
+ *
+ * Hot-reloaded context files (`AGENTS.md`, `local.md`) are deliberately not
+ * watched: the runtime re-reads `AGENTS.md` on the fly and skills read
+ * `local.md` when they work, so editing them needs no restart — watching them
+ * only produced false dispatcher blocks ("agent config changed").
  */
 const ROOT_CONFIG_FILES = [
   path.join('.opencode', 'opencode.json'),
-  'AGENTS.md',
-  'local.md',
   'opencode.json',
   'opencode.jsonc',
 ];

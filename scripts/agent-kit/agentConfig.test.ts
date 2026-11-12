@@ -141,7 +141,7 @@ describe('model references', () => {
 });
 
 describe('collectConfigFiles', () => {
-  it('collects every agent config input and ignores unrelated files', async () => {
+  it('collects every agent config input and ignores unrelated and hot-reloaded context files', async () => {
     const root = await createRoot();
 
     const coder = await writeFileAt(root, '.opencode/agents/coder.md');
@@ -164,12 +164,12 @@ describe('collectConfigFiles', () => {
       skill,
       command,
       opencodeConfig,
-      agentsFile,
-      localFile,
-      opencodeJsonc,
       path.join(root, 'opencode.json'),
+      opencodeJsonc,
     ]));
     expect(files).not.toContain(skillReadme);
+    expect(files).not.toContain(agentsFile);
+    expect(files).not.toContain(localFile);
     expect(files).not.toContain(unrelated);
     expect(files).not.toContain(plugin);
   });

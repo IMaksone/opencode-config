@@ -127,7 +127,7 @@ Patch files are never removed (harmless thanks to the probe in step 2). Any step
 
 ### Commit of the `.opencode` config repository
 
-`коммит-конфиг <T-id>` commits the nested `.opencode` repository (config plans without a task number): `git -C <main>/.opencode add <пути>`, then `git -C <main>/.opencode commit -m "<сообщение>"`. The paths and the message arrive verbatim from the plan task's `commit:` line and its affected files.
+`коммит-конфиг <T-id>` commits the nested `.opencode` repository (config plans without a task number): `git -C <main>/.opencode add <пути>`, then `git -C <main>/.opencode commit -m "<сообщение>"`. The paths and the message arrive verbatim from the plan task's `commit:` line and its affected files; the message follows the same English-only rule as `### Commit` — the paths stay verbatim, a non-English summary is translated with the `<type>: <task-number>` prefix and the format kept, and the substitution is reported in the output.
 
 ### Merge
 
@@ -136,6 +136,7 @@ Never merge. The MR to `test`/`develop`/`main` and the merge itself are always m
 ### Commit
 
 - Conventional Commits: `<type>: <task-number> <summary>`. Use `fix` instead of `hotfix`.
+- Commit messages are written in English only — subject and body. The `<type>` and `<task-number>` keep their format; `<summary>` is English prose. If an incoming message (a `tdd` dispatch, `коммит-конфиг`, or a manual command) is not English, translate the summary into English, keep the `<type>: <task-number>` prefix and the Conventional Commits format, and report the substitution in the output. Never transliterate; never commit a non-English message.
 - Subject at most 72 characters, each body line at most 100 characters.
 - Stage only explicit paths or use `git add -u`. Never use `git add .`, `-A`, `-p`, `-i`, or `-f`.
 - Never use `--amend`, `--no-verify`, `-n`, `-e`, or `-c`.
@@ -149,7 +150,7 @@ Never merge. The MR to `test`/`develop`/`main` and the merge itself are always m
 2. Commit with Conventional Commits: `<type>: <task-number> <summary>`.
 3. Stop. There is no push here: pushing belongs to `закрыть <task-number>`, and the MR and merge stay manual.
 
-A `tdd` dispatch carries the plan task's `commit:` message and the explicit paths to stage — use both verbatim: the message becomes the commit subject, the paths are the staging list.
+A `tdd` dispatch carries the plan task's `commit:` message and the explicit paths to stage — the paths are the staging list and always stay verbatim. The message becomes the commit subject verbatim only when it is already English; otherwise the English-only rule of `### Commit` applies: translate the summary, keep the `<type>: <task-number>` prefix and the Conventional Commits format, and report the substitution in the output.
 
 If the tree has nothing to stage, return `DONE` and report that there is nothing to commit.
 
@@ -167,7 +168,7 @@ If the tree has nothing to stage, return `DONE` and report that there is nothing
 
 `закрыть <task-number>` means:
 
-1. Commit if the tree is dirty.
+1. Commit if the tree is dirty — git-manager composes the residual commit message itself, in English (the rule of `### Commit`).
 2. Push the task branch.
 3. Park the worktree (worktree mode only; in the main-folder flow there is nothing to park): clean-tree check in the worktree (`git status --porcelain` with cwd = worktree; tracked changes → `BLOCKED` with the paths). Then, with cwd = worktree: if the local branch `wt/<имя>` does not exist — `git fetch origin` and `git switch --no-track -c wt/<имя> origin/<base>`; if it exists — `git switch wt/<имя>`. `<base>` is the plan's parent branch (the `base` of the plan's Git section; for worktree plans — the base of `worktree.create`). If `<base>` is unknown (a manual close-out without a plan), ask the user; never infer it from branches. If `origin/<base>` is missing or unreachable, report it and leave the worktree on the task branch (no parking — the task branch is not freed; tell the user). The worktree is not removed; the parking branch is local, never pushed, never force-updated. The task branch is now free — it can be checked out in the main folder.
 4. Report the branch name, commit hashes, push result, remaining uncommitted files, and a suggested MR title. The report adds: the worktree is parked at `wt/<имя>` (a clone of `origin/<base>`, `<commit>`), and the question «Основную папку переключить на `<task-branch>`?» — an automatic switch is forbidden; only an explicit user confirmation starts `main.switch <task-branch>`.

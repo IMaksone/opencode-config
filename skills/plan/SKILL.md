@@ -75,7 +75,7 @@ Each task is written as:
 - steps: <small, ordered, no placeholders>
 - tests: <what to test, or `existing suite` / `manual check` for config and docs>
 - verify: <exact commands, e.g. `pnpm exec vitest run src/entities/wells/helper.test.ts`, `pnpm lint`, `pnpm typecheck`>
-- commit: `<type>: <task-number> <summary>` — Conventional Commits subject; `git-manager` stages exactly this task's affected files
+- commit: `<type>: <task-number> <summary>` — Conventional Commits subject; the summary is written in English; `git-manager` stages exactly this task's affected files
 ```
 
 Autotests are not required for Markdown and config tasks: `tests: existing suite / manual check` plus a `verify` line is enough; the `commit:` line is mandatory for every task.
