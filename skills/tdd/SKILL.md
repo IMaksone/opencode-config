@@ -141,6 +141,13 @@ Before close-out, ask the user explicitly. Only after explicit confirmation disp
 
 Close-out is push of the task branch, never a merge. Remind the user that the MR and merge are manual.
 
+The final close-out report of a successful run ends with the block «Предлагаемое описание MR» — a ready-to-paste description for the manual merge:
+
+- **Title** — English, Conventional Commits `<type>: <task-number> <summary>`, built from the task branch and the commit subjects.
+- **Body** — Russian, one short paragraph (1–3 sentences) per plan task T1…Tn: what changed and why, from the plan, the contract, `git log <base>..HEAD`, and `git diff <base>...HEAD`.
+
+The block lives only in this final report: per-task pause reports, `BLOCKED` runs, and local-only plans (`branch: none`) carry no block.
+
 Worktree mode: `закрыть <task-number>` runs in the worktree (the task number is mandatory for Cervart plans). git-manager parks the worktree on the local branch `wt/<имя>` (a clone of `origin/<base>`; the worktree is not removed; `base` — the plan's parent branch — is passed in the `закрыть` dispatch from the plan's Git section) and ends its report with the question «переключить основную папку на ветку задачи?». Pass the question to the user as is, without auto-continuation. On the user's confirmation dispatch `git-manager` with the first line `main.switch <task-branch>`, then move the session back to the main folder with the `session_move` tool (`directory: <main>`, no prompt) — the user lands on the task branch. On refusal or a `BLOCKED` (dirty main tree) just run `session_move` and remind the user that the task branch is free for a manual `git switch`. If a WIP patch is applied in the main folder (git-manager probes `git -C <main> apply --check -R`), remind the user. The worktree is not removed.
 
 For a local-only plan (`branch: none`, gitignored files) the task `G: git close-out` is only a `git status` check in every affected repository, and `tdd` makes no commit.
@@ -166,7 +173,7 @@ While `tdd` runs, its own child sessions keep it alive: activity of a child refr
 
 ## Output
 
-`DONE` or `BLOCKED` with a short summary of the contract, the tasks processed, the red/green results, and the exact commands run. Answer the user in Russian.
+`DONE` or `BLOCKED` with a short summary of the contract, the tasks processed, the red/green results, and the exact commands run. The successful close-out report also ends with the «Предлагаемое описание MR» block (section 6). Answer the user in Russian.
 
 ## BLOCKED
 
