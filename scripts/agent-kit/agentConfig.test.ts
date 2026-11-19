@@ -44,14 +44,14 @@ describe('parseAgentFrontmatter', () => {
       '---',
       'description: demo agent',
       'mode: subagent',
-      'model: openrouter/deepseek/deepseek-v4.1-flash-1017',
+      'model: prov/model-x',
       'variant: high',
       '---',
       'Body text',
     ].join('\n');
 
     expect(parseAgentFrontmatter(markdown)).toEqual({
-      model: 'openrouter/deepseek/deepseek-v4.1-flash-1017',
+      model: 'prov/model-x',
       mode: 'subagent',
       variant: 'high',
     });
@@ -60,7 +60,7 @@ describe('parseAgentFrontmatter', () => {
   it('ignores nested permission blocks and their keys', () => {
     const markdown = [
       '---',
-      'model: openrouter/demo',
+      'model: prov/demo',
       'permission:',
       '  edit:',
       '    "*": deny',
@@ -68,7 +68,7 @@ describe('parseAgentFrontmatter', () => {
       '---',
     ].join('\n');
 
-    expect(parseAgentFrontmatter(markdown)).toEqual({ model: 'openrouter/demo' });
+    expect(parseAgentFrontmatter(markdown)).toEqual({ model: 'prov/demo' });
   });
 
   it('returns empty info when model is missing', () => {
@@ -78,20 +78,20 @@ describe('parseAgentFrontmatter', () => {
   });
 
   it('returns empty info without frontmatter', () => {
-    expect(parseAgentFrontmatter('# Agent\n\nmodel: openrouter/demo')).toEqual({});
+    expect(parseAgentFrontmatter('# Agent\n\nmodel: prov/demo')).toEqual({});
   });
 
   it('strips quotes around values', () => {
-    const markdown = ['---', 'model: "openrouter/demo"', 'variant: \'low\'', '---'].join('\n');
+    const markdown = ['---', 'model: "prov/demo"', 'variant: \'low\'', '---'].join('\n');
 
-    expect(parseAgentFrontmatter(markdown)).toEqual({ model: 'openrouter/demo', variant: 'low' });
+    expect(parseAgentFrontmatter(markdown)).toEqual({ model: 'prov/demo', variant: 'low' });
   });
 
   it('splits the V2 variant suffix into model and variant', () => {
-    const markdown = ['---', 'model: openrouter/z-ai/glm-5.3#temp-low', '---'].join('\n');
+    const markdown = ['---', 'model: prov/model-y#temp-low', '---'].join('\n');
 
     expect(parseAgentFrontmatter(markdown)).toEqual({
-      model: 'openrouter/z-ai/glm-5.3',
+      model: 'prov/model-y',
       variant: 'temp-low',
     });
   });
@@ -100,7 +100,7 @@ describe('parseAgentFrontmatter', () => {
     const markdown = [
       '---',
       'description: demo',
-      'model: openrouter/deepseek/deepseek-v4.1-flash-1017#low',
+      'model: prov/model-x#low',
       'variant: high',
       'mode: subagent',
       'temperature: 0.1',
@@ -112,29 +112,29 @@ describe('parseAgentFrontmatter', () => {
     ].join('\n');
 
     expect(parseAgentFrontmatter(markdown)).toEqual({
-      model: 'openrouter/deepseek/deepseek-v4.1-flash-1017',
+      model: 'prov/model-x',
       mode: 'subagent',
       variant: 'high',
     });
   });
 
   it('ignores a trailing hash without a variant name', () => {
-    expect(parseAgentFrontmatter(['---', 'model: openrouter/demo#', '---'].join('\n')))
-      .toEqual({ model: 'openrouter/demo' });
+    expect(parseAgentFrontmatter(['---', 'model: prov/demo#', '---'].join('\n')))
+      .toEqual({ model: 'prov/demo' });
   });
 });
 
 describe('model references', () => {
   it('splits a reference with and without a variant', () => {
-    expect(splitModelReference('openrouter/xiao/mimo#temp-low'))
-      .toEqual({ model: 'openrouter/xiao/mimo', variant: 'temp-low' });
-    expect(splitModelReference('openrouter/xiao/mimo')).toEqual({ model: 'openrouter/xiao/mimo' });
+    expect(splitModelReference('prov/model-z#temp-low'))
+      .toEqual({ model: 'prov/model-z', variant: 'temp-low' });
+    expect(splitModelReference('prov/model-z')).toEqual({ model: 'prov/model-z' });
     expect(splitModelReference('#low')).toEqual({ model: '#low' });
   });
 
   it('formats the full reference back', () => {
-    expect(formatModel({ model: 'openrouter/demo', variant: 'high' })).toBe('openrouter/demo#high');
-    expect(formatModel({ model: 'openrouter/demo' })).toBe('openrouter/demo');
+    expect(formatModel({ model: 'prov/demo', variant: 'high' })).toBe('prov/demo#high');
+    expect(formatModel({ model: 'prov/demo' })).toBe('prov/demo');
     expect(formatModel({})).toBeUndefined();
     expect(formatModel(undefined)).toBeUndefined();
   });
@@ -244,7 +244,7 @@ describe('aggregateAgents', () => {
     const agents = aggregateAgents([
       {
         path: path.join('/repo', '.opencode', 'agents', 'coder.md'),
-        content: '---\nmodel: openrouter/deepseek/deepseek-v4.1-flash-1017\nvariant: low\n---',
+        content: '---\nmodel: prov/model-x\nvariant: low\n---',
       },
       {
         path: path.join('/repo', '.opencode', 'agents', 'test-generator.md'),
@@ -252,16 +252,16 @@ describe('aggregateAgents', () => {
       },
       {
         path: path.join('/repo', '.opencode', 'opencode.json'),
-        content: '{"agent":{"coder":{"model":"openrouter/demo"}}}',
+        content: '{"agent":{"coder":{"model":"prov/demo"}}}',
       },
       {
         path: path.join('/repo', '.opencode', 'skills', 'tdd', 'SKILL.md'),
-        content: '---\nmodel: openrouter/demo\n---',
+        content: '---\nmodel: prov/demo\n---',
       },
     ]);
 
     expect(agents).toEqual({
-      'coder': { model: 'openrouter/deepseek/deepseek-v4.1-flash-1017', variant: 'low' },
+      'coder': { model: 'prov/model-x', variant: 'low' },
       'test-generator': { mode: 'subagent' },
     });
     expect(missingModel(agents)).toEqual(['test-generator']);

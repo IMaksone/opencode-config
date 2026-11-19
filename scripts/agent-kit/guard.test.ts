@@ -110,10 +110,10 @@ async function createAgentFiles(root: string): Promise<{ coder: string }> {
   const coder = await writeFileAt(
     root,
     '.opencode/agents/coder.md',
-    '---\nmode: subagent\nmodel: openrouter/deepseek/deepseek-v4.1-flash-1017#low\n---\n',
+    '---\nmode: subagent\nmodel: prov/model-x#low\n---\n',
   );
 
-  await writeFileAt(root, '.opencode/agents/tdd.md', '---\nmode: all\nmodel: openrouter/z-ai/glm-5.3#temp-low\n---\n');
+  await writeFileAt(root, '.opencode/agents/tdd.md', '---\nmode: all\nmodel: prov/model-y#temp-low\n---\n');
   await writeFileAt(root, '.opencode/agents/broken.md', '---\nmode: subagent\n---\n');
 
   return { coder };
@@ -185,8 +185,8 @@ describe('installGuard', () => {
     expect(report.fresh).toBe(true);
     expect(report.checked).toEqual([]);
     expect(report.missingModel).toEqual(['broken']);
-    expect(report.agents.coder.model).toBe('openrouter/deepseek/deepseek-v4.1-flash-1017#low');
-    expect(report.agents.tdd.model).toBe('openrouter/z-ai/glm-5.3#temp-low');
+    expect(report.agents.coder.model).toBe('prov/model-x#low');
+    expect(report.agents.tdd.model).toBe('prov/model-y#temp-low');
     expect(report.agents.broken.model).toBeUndefined();
     expect(new Date(report.serverStartedAt).getTime()).toBeLessThanOrEqual(Date.now());
   });
@@ -368,7 +368,7 @@ describe('installGuard', () => {
 
     await writeFileAt(root, '.opencode/agents/tdd.md', '---\nmode: all\n---\n');
 
-    const { ctx, toolHooks } = createContext(root, { agentModels: { tdd: 'openrouter/z-ai/glm-5.3#temp-low' } });
+    const { ctx, toolHooks } = createContext(root, { agentModels: { tdd: 'prov/model-y#temp-low' } });
 
     await installGuard(ctx);
 
