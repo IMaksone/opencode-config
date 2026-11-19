@@ -1,12 +1,12 @@
 /**
- * Browser-guard plugin: live browser checks may navigate only to the local
- * dev server (`http://localhost:3000` / `http://127.0.0.1:3000`, plus
- * `about:blank`).
+ * Browser-guard plugin: live browser checks may navigate only to local
+ * dev-server origins (loopback, any port) plus `about:blank`, and any extra
+ * origins from `OPENCODE_BROWSER_GUARD_ALLOWED_ORIGINS`.
  *
  * No permission rule can express a URL allowlist for MCP tools (their
  * resource is always `*`), so the guard hooks `tool.execute.before` and
  * throws on a disallowed navigation — the tool call is blocked and the model
- * sees the reason naming the dev-server URL.
+ * sees the reason naming the allowed origins.
  *
  * The opencode V2 plugin API surface is declared locally on purpose: the
  * entrypoint stays a thin `Plugin.define` wrapper, so this module is
@@ -15,7 +15,7 @@
 
 import process from 'node:process';
 
-import { checkBrowserTool } from './policy';
+import { checkBrowserTool, EXTRA_ORIGINS_ENV_KEY, extraOriginsFromEnv } from './policy';
 
 const SERVICE = 'browser-guard';
 
@@ -96,6 +96,8 @@ export async function installBrowserGuard(ctx: BrowserGuardContext): Promise<(()
     return undefined;
   }
 
+  const extraOrigins = extraOriginsFromEnv(process.env[EXTRA_ORIGINS_ENV_KEY]);
+
   const registration = await ctx.tool.hook('execute.before', (event) => {
     const tool = event?.tool;
 
@@ -104,8 +106,8 @@ export async function installBrowserGuard(ctx: BrowserGuardContext): Promise<(()
     }
 
     // A deliberate throw on a denied navigation blocks the tool call; the
-    // model sees the reason and can retry with the dev-server URL.
-    const verdict = checkBrowserTool(tool, isRecord(event.input) ? event.input : undefined);
+    // model sees the reason and can retry with an allowed origin.
+    const verdict = checkBrowserTool(tool, isRecord(event.input) ? event.input : undefined, extraOrigins);
 
     if (verdict.verdict === 'deny') {
       void log('warn', 'navigation refused', { sessionID: event.sessionID, tool, url: verdict.url });

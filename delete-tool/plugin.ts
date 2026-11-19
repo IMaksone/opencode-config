@@ -2,8 +2,8 @@
  * `delete_file` tool for opencode V2: the only sanctioned way for an agent to
  * delete files.
  *
- * Every path is validated first (an existing file inside the project `src/`,
- * `.ts`/`.tsx` only); one invalid path cancels the whole request before
+ * Every path is validated first (an existing file inside the project root,
+ * protected paths excluded); one invalid path cancels the whole request before
  * anything is touched. The surviving paths go through a single
  * `permission.assert` with the dedicated `delete` action — `coder` allows
  * production files and routes test files through an `ask` prompt, every other
@@ -243,14 +243,14 @@ export async function installDeleteTool(ctx: DeleteToolContext): Promise<void> {
   await ctx.tool.transform((tools) => {
     tools.add({
       name: 'delete_file',
-      description: 'Delete existing project files under src/ (.ts/.tsx only). '
+      description: 'Delete existing project files (protected paths like .env*, *.local and VCS internals are never deletable). '
         + 'Every listed path is validated first; one invalid path cancels the whole request. '
         + 'Test files require the user to accept an ask prompt.',
       input: {
         type: 'object',
         properties: {
           paths: {
-            description: 'Absolute or project-relative paths of the files to delete (1–50), inside src/, .ts/.tsx only',
+            description: 'Absolute or project-relative paths of the files to delete (1–50)',
             items: { type: 'string' },
             maxItems: MAX_PATHS,
             minItems: 1,

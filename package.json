@@ -1,5 +1,8 @@
 {
   "dependencies": {
     "@opencode/plugin": "2.1.4"
+  },
+  "devDependencies": {
+    "vitest": "3.2.4"
   }
 }

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { allowedTargets, validateMoveTarget } from './policy';
 
-const ROOT = '/tmp/cervart-project';
-const WT = '/tmp/cervart-wt/agent';
+const ROOT = '/tmp/kit-project';
+const WT = '/tmp/kit-wt/agent';
 
 describe('validateMoveTarget', () => {
   it('accepts the canonical project root as project-root', () => {
@@ -32,6 +32,7 @@ describe('validateMoveTarget', () => {
       targetIsDirectory: true,
       dotGitContent: `gitdir: ${ROOT}/.git/worktrees/agent\n`,
       targetKitPresent: true,
+      rootKitPresent: true,
     })).toEqual({ ok: true, kind: 'worktree', real: WT });
   });
 
@@ -43,10 +44,11 @@ describe('validateMoveTarget', () => {
       targetIsDirectory: true,
       worktreeRoots: [WT],
       targetKitPresent: true,
+      rootKitPresent: true,
     })).toEqual({ ok: true, kind: 'worktree', real: WT });
   });
 
-  it('refuses a marker-proven worktree without the .opencode agent kit, naming worktree.kit', () => {
+  it('accepts an unkitted worktree when the project root itself has no kit', () => {
     expect(validateMoveTarget({
       rawDirectory: WT,
       canonicalRoot: ROOT,
@@ -54,13 +56,37 @@ describe('validateMoveTarget', () => {
       targetIsDirectory: true,
       dotGitContent: `gitdir: ${ROOT}/.git/worktrees/agent\n`,
       targetKitPresent: false,
+      rootKitPresent: false,
+    })).toEqual({ ok: true, kind: 'worktree', real: WT });
+  });
+
+  it('accepts an unkitted worktree when the kit fact of the root is unknown', () => {
+    expect(validateMoveTarget({
+      rawDirectory: WT,
+      canonicalRoot: ROOT,
+      targetReal: WT,
+      targetIsDirectory: true,
+      dotGitContent: `gitdir: ${ROOT}/.git/worktrees/agent\n`,
+      targetKitPresent: false,
+    })).toEqual({ ok: true, kind: 'worktree', real: WT });
+  });
+
+  it('refuses a marker-proven worktree without the .opencode agent kit when the root has one, naming worktree.kit', () => {
+    expect(validateMoveTarget({
+      rawDirectory: WT,
+      canonicalRoot: ROOT,
+      targetReal: WT,
+      targetIsDirectory: true,
+      dotGitContent: `gitdir: ${ROOT}/.git/worktrees/agent\n`,
+      targetKitPresent: false,
+      rootKitPresent: true,
     })).toEqual({
       ok: false,
       reason: 'target worktree has no .opencode agent kit; link it first: git-manager worktree.kit <name>, then opencode service restart',
     });
   });
 
-  it('refuses an inventory-listed worktree without the .opencode agent kit', () => {
+  it('refuses an inventory-listed worktree without the .opencode agent kit when the root has one', () => {
     expect(validateMoveTarget({
       rawDirectory: WT,
       canonicalRoot: ROOT,
@@ -68,6 +94,7 @@ describe('validateMoveTarget', () => {
       targetIsDirectory: true,
       worktreeRoots: [WT],
       targetKitPresent: false,
+      rootKitPresent: true,
     })).toEqual({
       ok: false,
       reason: 'target worktree has no .opencode agent kit; link it first: git-manager worktree.kit <name>, then opencode service restart',
@@ -174,8 +201,8 @@ describe('validateMoveTarget', () => {
     [42, 'directory must be a non-empty string'],
     ['', 'directory must be a non-empty string'],
     ['   ', 'directory must be a non-empty string'],
-    ['cervart-wt/agent', 'directory must be an absolute path'],
-    ['../cervart-wt/agent', 'directory must be an absolute path'],
+    ['wt/agent', 'directory must be an absolute path'],
+    ['../wt/agent', 'directory must be an absolute path'],
     ['src', 'directory must be an absolute path'],
   ])('rejects %j with %s', (raw, reason) => {
     expect(validateMoveTarget({

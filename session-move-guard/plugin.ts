@@ -261,6 +261,19 @@ export async function installSessionMoveGuard(ctx: SessionMoveGuardContext): Pro
     let targetIsDirectory = false;
     let dotGitContent: string | undefined;
     let targetKitPresent: boolean | undefined;
+    let rootKitPresent: boolean | undefined;
+
+    // Whether the project root itself carries an agent kit (`<root>/.opencode`
+    // as a directory or a symlink to one — `stat` follows symlinks). With a
+    // root kit the linked-kit workflow is in force and worktree targets must
+    // carry the kit too; without one the config comes from the global
+    // location and worktrees are accepted as-is.
+    try {
+      rootKitPresent = (await stat(path.join(canonicalRoot, '.opencode'))).isDirectory();
+    }
+    catch {
+      rootKitPresent = false;
+    }
 
     if (targetReal !== undefined) {
       try {
@@ -284,9 +297,9 @@ export async function installSessionMoveGuard(ctx: SessionMoveGuardContext): Pro
 
         // The agent kit of the target: `<target>/.opencode` as a directory or
         // a symlink to one (`stat` follows symlinks). A missing or broken
-        // link means no kit — a session moved there cannot resolve the
-        // project agents. The fact gates worktree verdicts only; the project
-        // root is the kit source and ignores it.
+        // link means no kit. The fact gates worktree verdicts only when the
+        // root itself has a kit; the project root is the kit source and
+        // ignores it.
         try {
           targetKitPresent = (await stat(path.join(targetReal, '.opencode'))).isDirectory();
         }
@@ -303,6 +316,7 @@ export async function installSessionMoveGuard(ctx: SessionMoveGuardContext): Pro
       targetIsDirectory,
       dotGitContent,
       targetKitPresent,
+      rootKitPresent,
       worktreeRoots: await inventoryRoots(),
     });
 

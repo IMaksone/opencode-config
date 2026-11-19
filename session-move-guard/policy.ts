@@ -9,10 +9,13 @@
  * the main folder) and any git worktree of that project (`worktree`) — either
  * proven by the linked-worktree marker `<wt>/.git` → `gitdir:
  * <root>/.git/worktrees/<name>` or listed in the native opencode worktree
- * inventory. A proven worktree must also carry the agent kit
+ * inventory. When the project root itself carries an agent kit
+ * (`<root>/.opencode`, the linked-kit workflow described in the README
+ * adaptation guide), a proven worktree must carry the kit too
  * (`<wt>/.opencode`, a directory or a symlink to one): without it the session
  * would land in a location whose config knows none of the project agents.
- * Everything else is refused with the allowed list.
+ * When the root has no kit (agents come from the global config), worktrees
+ * are accepted as-is. Everything else is refused with the allowed list.
  */
 
 import path from 'node:path';
@@ -20,8 +23,9 @@ import path from 'node:path';
 export type MoveTargetKind = 'project-root' | 'worktree';
 
 /**
- * Refusal for a proven worktree without the agent kit. Names the recovery
- * action (`worktree.kit`) and the restart: linking the kit alone is not
+ * Refusal for a proven worktree without the agent kit while the project root
+ * has one. Names the recovery action (`worktree.kit`, a git-manager command
+ * from the linked-kit variant) and the restart: linking the kit alone is not
  * enough, the config snapshot is bound to the running process.
  */
 const MISSING_KIT_REASON = 'target worktree has no .opencode agent kit; '
@@ -48,10 +52,17 @@ export interface MoveTargetFacts {
   /**
    * Whether `<target>/.opencode` exists as a directory (a symlink counts —
    * the fact is gathered with `stat`, which follows symlinks; a broken
-   * symlink means no kit). Required for `worktree` verdicts; ignored for
-   * `project-root` — the root is the kit source.
+   * symlink means no kit). Consulted for `worktree` verdicts only when the
+   * root itself has a kit.
    */
   targetKitPresent?: boolean;
+  /**
+   * Whether `<canonicalRoot>/.opencode` exists as a directory (a symlink
+   * counts). When `true`, a worktree target must carry the kit as well;
+   * when `false`, the config comes from outside the project and worktrees
+   * are accepted without a kit.
+   */
+  rootKitPresent?: boolean;
 }
 
 /**
@@ -119,9 +130,10 @@ export function allowedTargets(canonicalRoot: string, worktreeRoots: readonly st
  *
  * The order is deliberate: input shape first, then the project root (the
  * return-to-main case), then the worktree proof (gitdir marker or inventory)
- * with the kit gate applied only to a proven worktree, and only then the
- * refusal that names every allowed target. Without a proof the kit fact is
- * not consulted: garbage and foreign markers keep the generic refusal.
+ * with the kit gate — applied only to a proven worktree and only when the
+ * project root itself carries a kit — and only then the refusal that names
+ * every allowed target. Without a proof the kit facts are not consulted:
+ * garbage and foreign markers keep the generic refusal.
  */
 export function validateMoveTarget(facts: MoveTargetFacts): MoveTargetVerdict {
   const { rawDirectory } = facts;
@@ -157,6 +169,10 @@ export function validateMoveTarget(facts: MoveTargetFacts): MoveTargetVerdict {
     || worktreeRoots.includes(targetReal);
 
   if (provenWorktree) {
+    if (facts.rootKitPresent !== true) {
+      return { ok: true, kind: 'worktree', real: targetReal };
+    }
+
     return facts.targetKitPresent === true
       ? { ok: true, kind: 'worktree', real: targetReal }
       : { ok: false, reason: MISSING_KIT_REASON };

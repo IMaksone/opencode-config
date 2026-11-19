@@ -123,6 +123,10 @@ describe('installSessionMoveGuard', () => {
     project = await mkdtemp(path.join(tmpdir(), 'session-move-'));
     projectReal = await realpath(project);
 
+    // The project root carries an agent kit: the linked-kit workflow is in
+    // force, so worktree targets must carry the kit too.
+    await mkdir(path.join(project, '.opencode'));
+
     // A shell worktree (created by `git worktree add`): a directory whose
     // `.git` is a file pointing into the main repository's worktrees store.
     // The `.opencode` kit is a plain directory: every worktree target must
@@ -203,6 +207,32 @@ describe('installSessionMoveGuard', () => {
     expect(worktreeCalls.count).toBe(1);
   });
 
+  it('accepts a kitted worktree even when the project root has no kit', async () => {
+    const nokitRoot = await mkdtemp(path.join(tmpdir(), 'session-move-nokitroot-'));
+
+    try {
+      const plainWorktree = await mkdtemp(path.join(tmpdir(), 'session-move-plainwt-'));
+
+      try {
+        await writeFile(path.join(plainWorktree, '.git'), `gitdir: ${await realpath(nokitRoot)}/.git/worktrees/agent\n`);
+
+        const { moveCalls, tool } = await install(nokitRoot);
+        const plainReal = await realpath(plainWorktree);
+
+        const result = await tool.execute({ directory: plainWorktree }, TDD);
+
+        expect(result.content).toBe(`session moved to ${plainReal} (worktree)`);
+        expect(moveCalls).toHaveLength(1);
+      }
+      finally {
+        await rm(plainWorktree, { force: true, recursive: true });
+      }
+    }
+    finally {
+      await rm(nokitRoot, { force: true, recursive: true });
+    }
+  });
+
   it('refuses a marker-proven worktree without the .opencode agent kit', async () => {
     const nokit = await mkdtemp(path.join(tmpdir(), 'session-move-nokit-'));
 
@@ -233,9 +263,8 @@ describe('installSessionMoveGuard', () => {
     try {
       await writeFile(path.join(linkkit, '.git'), `gitdir: ${projectReal}/.git/worktrees/agent\n`);
 
-      // The kit source must exist: the harness project has no `.opencode`,
-      // and a symlink to a missing target is a broken — absent — kit.
-      await mkdir(path.join(project, '.opencode'));
+      // The root kit exists (created by the fixture); the worktree kit is a
+      // symlink to it — a symlink counts as a present kit.
       await symlink(path.join(project, '.opencode'), path.join(linkkit, '.opencode'));
 
       const { moveCalls, tool } = await install(project);
@@ -248,14 +277,13 @@ describe('installSessionMoveGuard', () => {
     }
     finally {
       await rm(linkkit, { force: true, recursive: true });
-      await rm(path.join(project, '.opencode'), { force: true, recursive: true });
     }
   });
 
   it('refuses a relative path before any permission or fs work', async () => {
     const { assertCalls, tool } = await install(project);
 
-    await expect(tool.execute({ directory: 'cervart-wt/agent' }, TDD))
+    await expect(tool.execute({ directory: 'wt/agent' }, TDD))
       .rejects.toThrow('session_move: directory must be an absolute path');
 
     expect(assertCalls).toHaveLength(0);

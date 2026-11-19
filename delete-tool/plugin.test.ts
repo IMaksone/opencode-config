@@ -103,6 +103,7 @@ describe('installDeleteTool', () => {
     await writeFile(path.join(project, 'src/b.test.ts'), 'export const b = 1;\n');
     await writeFile(path.join(project, 'src/shared/testing/setup.ts'), 'export {};\n');
     await writeFile(path.join(project, 'docs/note.md'), 'note\n');
+    await writeFile(path.join(project, '.env.local'), 'SECRET=1\n');
   });
 
   afterEach(async () => {
@@ -173,12 +174,21 @@ describe('installDeleteTool', () => {
     expect(await exists('src/b.test.ts')).toBe(false);
   });
 
-  it('classifies the shared testing subtree as test', async () => {
+  it('deletes a documentation file outside any src layout as production', async () => {
+    const { assertCalls, tool } = await install(project);
+
+    const result = await tool.execute({ paths: ['docs/note.md'] }, CODER);
+
+    expect(result.content).toEqual('deleted: docs/note.md (production)');
+    expect(assertCalls[0]?.resources).toEqual(['docs/note.md']);
+  });
+
+  it('classifies a testing-named subtree without markers as production', async () => {
     const { assertCalls, tool } = await install(project);
 
     const result = await tool.execute({ paths: ['src/shared/testing/setup.ts'] }, CODER);
 
-    expect(result.content).toEqual('deleted: src/shared/testing/setup.ts (test)');
+    expect(result.content).toEqual('deleted: src/shared/testing/setup.ts (production)');
     expect(assertCalls[0]?.resources).toEqual(['src/shared/testing/setup.ts']);
   });
 
@@ -195,14 +205,14 @@ describe('installDeleteTool', () => {
     expect(assertCalls[0]?.agent).toBe('git-manager');
   });
 
-  it('refuses the whole request when one path is invalid and touches nothing', async () => {
+  it('refuses the whole request when one path is protected and touches nothing', async () => {
     const { assertCalls, tool } = await install(project);
 
-    await expect(tool.execute({ paths: ['src/a.ts', 'docs/note.md'] }, CODER))
-      .rejects.toThrow(/docs\/note\.md — path is outside src\//);
+    await expect(tool.execute({ paths: ['src/a.ts', '.env.local'] }, CODER))
+      .rejects.toThrow(/\.env\.local — path is protected/);
 
     expect(await exists('src/a.ts')).toBe(true);
-    expect(await exists('docs/note.md')).toBe(true);
+    expect(await exists('.env.local')).toBe(true);
     expect(assertCalls).toHaveLength(0);
   });
 
@@ -253,12 +263,12 @@ describe('installDeleteTool', () => {
     expect(assertCalls).toHaveLength(0);
   });
 
-  it('refuses a project path that is not .ts/.tsx', async () => {
+  it('refuses a protected path whatever its extension', async () => {
     const { assertCalls, tool } = await install(project);
 
-    await expect(tool.execute({ paths: ['docs/note.md'] }, CODER)).rejects.toThrow(/docs\/note\.md — path is outside src\//);
+    await expect(tool.execute({ paths: ['.env.local'] }, CODER)).rejects.toThrow(/\.env\.local — path is protected/);
 
-    expect(await exists('docs/note.md')).toBe(true);
+    expect(await exists('.env.local')).toBe(true);
     expect(assertCalls).toHaveLength(0);
   });
 
@@ -293,12 +303,12 @@ describe('installDeleteTool', () => {
   it('logs refusals with the delete-tool service', async () => {
     const { logCalls, tool } = await install(project);
 
-    await expect(tool.execute({ paths: ['docs/note.md'] }, CODER)).rejects.toThrow();
+    await expect(tool.execute({ paths: ['.env.local'] }, CODER)).rejects.toThrow();
 
     const refused = logCalls.filter(call => call.message === 'delete refused');
 
     expect(refused).toHaveLength(1);
-    expect(refused[0]).toMatchObject({ extra: { reasons: [expect.stringContaining('docs/note.md')] }, level: 'warn', service: 'delete-tool' });
+    expect(refused[0]).toMatchObject({ extra: { reasons: [expect.stringContaining('.env.local')] }, level: 'warn', service: 'delete-tool' });
   });
 
   it('logs a denial with the delete-tool service before rethrowing', async () => {

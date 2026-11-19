@@ -87,7 +87,7 @@ describe('installBrowserGuard', () => {
     await expect(harness.fire({ tool: 'browser_browser_snapshot' })).resolves.toBeUndefined();
   });
 
-  it('throws with the dev-server reason on a navigation to 5173 and logs the refusal', async () => {
+  it('throws with the loopback-only reason on an outside navigation and logs the refusal', async () => {
     const harness = createHarness();
 
     await installBrowserGuard(harness.ctx);
@@ -95,14 +95,14 @@ describe('installBrowserGuard', () => {
     await expect(harness.fire({
       sessionID: 'ses_1',
       tool: 'browser_browser_navigate',
-      input: { url: 'http://localhost:5173' },
-    })).rejects.toThrow(/browser-guard: browser checks are only allowed on the dev server http:\/\/localhost:3000/);
+      input: { url: 'http://example.com' },
+    })).rejects.toThrow(/browser-guard: browser checks are allowed only on local dev-server origins/);
 
     const refused = harness.logCalls.filter(call => call.message === 'navigation refused');
 
     expect(refused).toHaveLength(1);
     expect(refused[0]).toMatchObject({
-      extra: { sessionID: 'ses_1', tool: 'browser_browser_navigate', url: 'http://localhost:5173' },
+      extra: { sessionID: 'ses_1', tool: 'browser_browser_navigate', url: 'http://example.com' },
       level: 'warn',
       service: 'browser-guard',
     });
