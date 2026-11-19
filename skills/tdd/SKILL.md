@@ -1,67 +1,160 @@
 ---
 name: tdd
-description: "Use when orchestrating a test-first task: git preparation, contract, tests, red/green coder stages, final review and close-out."
+description: Use when orchestrating a test-first task: git preparation, contract, tests, red/green per plan task with pauses, final review and close-out.
 ---
 
 # TDD orchestration
 
-You coordinate a test-first workflow. The only files you may create or edit are contracts under `.tmp/contracts/**`. Never write production code or tests yourself.
+You coordinate a test-first workflow. The only files you may create or edit are the contract and the progress file under `<main>/.tmp/contracts/**`. Never write production code or tests yourself, and never edit the plan.
 
-Read the project's instructions and conventions, the relevant docs, and the plan before starting. Discover the project's lint, typecheck, build, and focused test commands from its manifests; never assume a stack.
+Read `CODESTYLE.md`, `AGENTS.md`, the relevant files under `docs/`, and the plan before starting.
 
 ## Inputs
 
-- The plan from `.tmp/plans/<slug>.md` or the user's task description.
-- Task branch, and base branch when the user provided one. If the branch decision is missing, stop and ask.
-- Initials and task number only when the user provides them; otherwise use the branch naming form from `git-policy`.
-- Verification commands found in the project. If they are missing, record them as absent and ask only when they are required to judge the stage.
+- The plan from `<main>/.opencode/plans/<slug>.md` — always read by its absolute path (the kit directory is shared with worktrees via symlinks); or the user's task description.
+- Task number, base branch, and task branch from the plan. If any of them is missing, stop and ask.
+- Initials from `local.md` in the repository root; if missing or invalid, stop and ask.
+- The execution place: the fixed set is the worktrees `agent` and `agent-2` (`<wt> = <main>/../cervart-wt/<имя>`) plus the main folder `<main>`. The plan never fixes it — the choice is asked from the user before git preparation (section 1) and recorded as the contract's first line (`Worktree:`). An existing contract with a `Worktree:` line is a run continuation: use the recorded choice without asking.
 
 ## Process
 
-### 1. Git preparation
+### 0. Agent config check
 
-1. Check `git status --porcelain` and `git branch --show-current`.
-2. If there are staged or modified tracked files, stop and return `BLOCKED` with the paths. Untracked files are allowed.
-3. If the current branch is not the base branch, ask the user for confirmation. Only after explicit confirmation, dispatch `git-manager` with the first line `branch.switch <base>` and ask it to run `git pull --ff-only`. Then dispatch `git-manager` with the first line `branch.create <branch>`.
-4. If `git-manager` returns `BLOCKED`, stop. If it returns `DONE`, verify the current branch and continue.
-5. Without user confirmation, or on a dirty tree, stop.
+Before the first dispatch and before **every** later dispatch, call the `agent_config_check` tool and read its JSON result:
 
-### 2. Contract
+- `fresh !== true` → return `BLOCKED` with «конфиг агентов изменён после старта opencode — перезапусти сервер» and list `checked`.
+- `missingModel` contains `test-generator`, `coder`, or `git-manager` → return `BLOCKED` naming those agents.
+- If the tool is unavailable, return `BLOCKED` naming the missing tool.
+- Remember the `agents` map (`agent → model`) so every dispatch can be checked against it.
 
-Write `.tmp/contracts/<slug>.md` with these sections:
+The guard lives in the running opencode instance and its snapshot is bound to the **process**, not to a plugin load: agent files, skills, commands, `AGENTS.md`, `local.md` and root `opencode.json(c)` are snapshotted when the process starts. OpenCode reloads the plugin on every config save without re-taking that snapshot, so edits are not applied until the process restarts. Dispatch from a stale instance is blocked by the plugin and must be treated as `BLOCKED`, never retried.
+
+The check runs in the session's location. In worktree mode the kit (`.opencode`, `local.md`) is linked into the worktree as symlinks from `<main>` and needs `opencode service restart` after the linking — without a restart the agents of the worktree location are not visible.
+
+### 1. Worktree choice
+
+Before git preparation ask the user where the plan runs: the `question` tool with the header «Где исполняем план?» and exactly three options — «воркри agent», «воркри agent-2», «основная папка». If the `question` tool is unavailable, end the report with a text pause carrying the same question.
+
+- The contract already exists and contains a `Worktree:` line → do not ask: use the recorded choice (a run continuation, for example after a service restart).
+- Record the choice as the contract's first line: `Worktree: agent | agent-2 | main` with the absolute path of the execution place.
+- Invariant: `tdd` never offers to create a new worktree and never extends the option set — creation is only a direct user instruction (git-manager `worktree.create`).
+
+### 2. Git preparation
+
+**Worktree mode** (the user chose the worktree `<имя> ∈ {agent, agent-2}`) replaces the main-folder flow: the main folder is neither checked for dirt nor touched — no `branch.switch`, no `pull`, no `branch.create` there.
+
+1. Dispatch `git-manager` with `git worktree list`: the chosen worktree is missing → `BLOCKED` «воркри `<имя>` отсутствует; создание нового воркри — только по прямому указанию пользователя (git-manager `worktree.create`)».
+2. The worktree exists → dispatch `git-manager` with the first line `branch.create <branch>`: it runs with cwd = worktree — the clean-tree check happens there, the start point is always `origin/<base>`.
+3. Move the session: call the `session_move` tool with `directory: <абс-путь воркри>`. The target is validated by the `session-move-guard` plugin (the project root or one of its git worktrees); a worktree without the agent kit `<wt>/.opencode` is refused here — the reason names `worktree.kit` and the service restart; the move needs no prompt and is confirmed by the tool message in chat.
+4. After the move re-check the branch and the clean tree (cwd = worktree); on `BLOCKED` or a dirty worktree, stop. Then check the agent kit: `ls -ld <wt>/.opencode <wt>/local.md` — both must be symlinks into `<main>`; otherwise `BLOCKED` «воркри без кита агентов: диспетчеризуй git-manager `worktree.kit <имя>`, затем `opencode service restart`». The primary kit barrier sits before the move (step 3: `session-move-guard` refuses an unkitted worktree); this check stays as a duplicate — it catches the kit disappearing between the guard's pass and the completed move.
+
+**Off mode** (the user chose the main folder) keeps the main-folder flow:
+
+1. If the session cwd is not `<main>` (a previous run left the session in a worktree), move it back first: the `session_move` tool with `directory: <main>`.
+2. Check `git status --porcelain` and `git branch --show-current`.
+3. If there are staged or modified tracked files, stop and return `BLOCKED` with the paths. Untracked files are allowed.
+4. If the current branch is not the base branch, ask the user for confirmation. Only after explicit confirmation, dispatch `git-manager` with the first line `branch.switch <base>` and ask it to run `git pull --ff-only`. Then dispatch `git-manager` with the first line `branch.create <branch>`.
+5. If `git-manager` returns `BLOCKED`, stop. If it returns `DONE`, verify the current branch and continue.
+6. Without user confirmation, or on a dirty tree, stop.
+
+For a local-only plan (`branch: none`, the files are gitignored) there is nothing to switch or create: check `git status --porcelain` only and continue on the current branch — unless the plan's Git section explicitly requires commits through `коммит-конфиг` (a config plan); that section overrides the local-only skip.
+
+### 3. Progress file
+
+Read `<main>/.tmp/contracts/<slug>.progress.md` by absolute path before the first task:
+
+- The file is missing → create it with one checkbox per plan task plus `G`, and a `Last:` line.
+- The file exists → compare its task IDs and order with the plan. A mismatch means the plan or the progress file changed behind the run's back: return `BLOCKED` and ask the user which one is authoritative. Never guess and never renumber by hand.
+- Continue from the first unchecked task; never re-run a checked one.
+
+Format:
+
+```md
+# <slug>
+
+- [x] T1 <goal>
+- [ ] T2 <goal>
+- [ ] G git close-out
+
+Last: T1 done+committed, next T2
+```
+
+Before starting a new plan: if `<main>/.tmp/contracts/` holds an unfinished progress file of another plan, offer the user to finish that plan to `G` first or to park it explicitly (a note in its `Last:` line). Never run a new plan in parallel with an open one.
+
+The progress and contract files are always written to `<main>/.tmp/contracts/**` by absolute paths — regardless of the execution place; they survive worktree deletion. The unfinished-plan check above looks only at `<main>/.tmp/contracts/`. Creating and updating the progress file happens by the main folder's absolute paths.
+
+### 4. Contract
+
+Write `<main>/.tmp/contracts/<slug>.md` by absolute path **once** for the plan. The file's first line is the recorded execution place — `Worktree: <agent|agent-2|main> (<абсолютный путь>)` — followed by these sections:
 
 - Behavior
 - API/types
 - Errors
 - UI/selectors
 - State/URL
-- Fixtures
+- Fixtures/MSW
 - Test identifiers
 - Out of scope
 
-Omit sections that do not apply, but keep the contract precise enough for `test-generator` to write tests without guessing selectors, identifiers, or API shapes.
+The contract must be precise enough for `test-generator` to write tests without guessing selectors, identifiers, or API shapes.
 
-### 3. Tests
+### 5. Task loop
 
-Dispatch `test-generator` with the contract and the list of files it may touch. Review `git diff`, contract compliance, style, and edge cases. Do not proceed to `coder` until the tests are accepted. If the dispatch shows no progress (see “Watchdog and restart”), restart the stage with a narrower scope.
+One iteration handles exactly one task from the plan section `Tasks`. A plan without a `Tasks` section is a single task for the whole plan (legacy fallback).
 
-### 4. Red
+Run every verify command as a single shell call. Wrappers stay forbidden for `cd`, `&&` chains, `;`, `>`-redirects, and `echo` probes: the permission scanner checks a compound command part by part, so one unknown part rejects the whole call. Filter pipes are allowed and preferred — `… 2>&1 | tail -80` and `… | grep -E '<failure markers>'` pass the scanner because `tail *`/`grep *`/`head *` are allow-listed. One run — one result: the truncated preview hides failure summaries (they sit at the end of the output), so build the filter into the first and only run; re-running the same command to change its filter is forbidden; for a deep dive use `pnpm exec vitest run <paths> --reporter=json --outputFile=.tmp/<slug>.json` and inspect the file with `rg`/`cat`. Batch Vitest paths: every affected test file goes into one `pnpm exec vitest run` call (one cold start) — never one file per run and never concurrent duplicates of the same tests.
 
-Dispatch `coder` for stage 1. Verify that the tests fail on assertions, not on import, compile, or type errors. Run lint and typecheck. If the failure is an import or type error, send the coder back to fix the skeleton. If the dispatch shows no progress, apply “Watchdog and restart”.
+For each task:
 
-### 5. Green
+1. Call `agent_config_check` (step 0) and stop on any blocking result.
+2. Tests: dispatch `test-generator` with the contract, the task, and the list of files it may touch. Review `git diff`, contract compliance, style, and edge cases. Do not proceed to `coder` until the tests are accepted. For Markdown and config tasks with `tests: existing suite / manual check` skip this dispatch.
+3. Red: dispatch `coder` for stage 1 (skeleton). Verify that the tests fail on assertions, not on import errors. Run `pnpm typecheck` — the skeleton's type gate; the coder's stage 1 already ran the targeted eslint, so the orchestrator does not repeat a full lint here. If the failure is an import/type error, send the coder back to fix the skeleton.
+4. Green: dispatch a fresh `coder` session for stage 2. Verify with the task's `verify` commands plus `pnpm lint` and `pnpm typecheck`. Vitest is already part of the task's `verify`; launch a separate `pnpm exec vitest run` only when `verify` does not cover it — then as one call over all the task's paths.
+   Optional live check (UI-changing tasks only, and only when the user has already started the dev server): after green, run `browser_browser_navigate` to `http://localhost:3000<route>` (the dev port is pinned by `vite.config.ts`, `strictPort`; `5173`/`4173` never exist here — the `browser-guard` plugin denies them), then `browser_browser_snapshot` / `browser_browser_find` for the expected elements and `browser_browser_console_messages` for new errors versus the baseline (React DevTools INFO banner; `GET .../auth/me 401` pairs during session start/expiry). Never start the dev server yourself, never enter Keycloak credentials — the manual login belongs to the user. One snapshot per check. If the dev server is not running, skip the live check; it is not blocking. In worktree mode the check is valid only when the dev server runs FROM the worktree (the port 3000 is single); a server started in the main folder shows another branch — skip it, not blocking.
+5. Mark the task as done in the progress file and update the `Last:` line.
+6. **Pause, report, commit**: report «сделано / осталось / следующая» and end with «закоммитить T<n> и продолжаем?». Only on an explicit «продолжи»:
+   1. dispatch `git-manager` with the first line `коммит <task-number>`, passing the task's `commit:` message and its explicit paths from the plan — stage exactly those paths (worktree mode: the dispatch runs with cwd = worktree, the paths stay worktree-relative; no WIP sync happens automatically). For a config plan without a task number whose Git section requires commits, dispatch the first line `коммит-конфиг <T-id>` instead — the plan's Git section overrides the local-only skip;
+   2. on `DONE` continue with the next task; on `BLOCKED` (for example a failed pre-commit hook) stop and report — the next task never starts on an uncommitted tree;
+   3. for a local-only plan (`branch: none`) skip the dispatch — there is nothing to commit.
 
-Dispatch a fresh `coder` session for stage 2. Verify with focused tests, lint, and build. If the dispatch shows no progress, apply “Watchdog and restart”.
+   Any other reply keeps the run paused.
+
+   Batch continuation: an explicit «продолжи всё» / «продолжи до G» pre-confirms the per-task commits of all remaining tasks — run them without pauses, committing each task through `git-manager` right after its green gate. Mandatory stops remain: before `G` (close-out always needs its own explicit confirmation), on any `BLOCKED`, and on a failed pre-commit hook. Manual-QA items from `verify` never block a task on their own: collect them into a running list and show it as one checklist at the pause before `G`.
+
+When a task includes file deletions, pass their exact list from the plan to the `coder` prompt with the instruction «удалить инструментом `delete_file`; shell `rm` запрещён». For test-file deletions (`*.test.ts`, `*.test.tsx`, `*.testHelpers.ts`, `src/shared/testing/**`, `src/shared/api/testing/**`) carry the plan's mark that the user confirms each deletion through the tool's ask-prompt; a user refusal makes the task `BLOCKED`. `tdd` never deletes anything itself. Deletions the `delete_file` tool does not cover (paths outside `src/**` or not `.ts`/`.tsx`), planned by the plan as «удалить `<path>` через `git rm`»: pass their exact list to `git-manager` together with the task's `коммит <task-number>` dispatch, so the paths are removed in the same task commit; `tdd` never runs `git rm` itself.
+
+A task is accepted only when its own `verify` passes. `pnpm build` and the full `pnpm test` belong to the final review, not to every task.
+
+If a dispatch shows no progress, apply “Watchdog and restart”.
+
+### WIP sync on user command
+
+«синхронизируй WIP» / «убери WIP-синк» are user-only commands, never automatic: dispatch `git-manager` with the first line `wip.sync <branch>` / `wip.unsync <branch>` and report the result. No other step of the flow triggers a sync.
 
 ### 6. Final review and close-out
 
-Review `git diff` against the task and the contract, check the architecture, and make sure the tests were not adjusted to fit the implementation.
+Review the committed work against the plan and the contract — `git diff <base>...HEAD` on the task branch — check the architecture, and make sure the tests were not adjusted to fit the implementation. Run the plan-wide checks: `pnpm build` and `pnpm test`.
 
-Before close-out, ask the user explicitly. Only after explicit confirmation, dispatch `git-manager` with the first line `close <task-identifier>`. Close-out is commit plus push of the task branch, never a merge. Remind the user that the pull/merge request and merge are manual.
+Every task was committed at its own pause, so the tree must be clean here. A dirty tree means an unaccepted leftover: return `BLOCKED` with the paths.
+
+Before close-out, ask the user explicitly. Only after explicit confirmation dispatch `git-manager` with the first line `закрыть <task-number>` (it commits leftovers if the tree is dirty, then pushes the task branch).
+
+Close-out is push of the task branch, never a merge. Remind the user that the MR and merge are manual.
+
+The final close-out report of a successful run ends with the block «Предлагаемое описание MR» — a ready-to-paste description for the manual merge:
+
+- **Title** — English, Conventional Commits `<type>: <task-number> <summary>`, built from the task branch and the commit subjects.
+- **Body** — Russian, one short paragraph (1–3 sentences) per plan task T1…Tn: what changed and why, from the plan, the contract, `git log <base>..HEAD`, and `git diff <base>...HEAD`.
+
+The block lives only in this final report: per-task pause reports, `BLOCKED` runs, and local-only plans (`branch: none`) carry no block.
+
+Worktree mode: `закрыть <task-number>` runs in the worktree (the task number is mandatory for Cervart plans). git-manager parks the worktree on the local branch `wt/<имя>` (a clone of `origin/<base>`; the worktree is not removed; `base` — the plan's parent branch — is passed in the `закрыть` dispatch from the plan's Git section) and ends its report with the question «переключить основную папку на ветку задачи?». Pass the question to the user as is, without auto-continuation. On the user's confirmation dispatch `git-manager` with the first line `main.switch <task-branch>`, then move the session back to the main folder with the `session_move` tool (`directory: <main>`, no prompt) — the user lands on the task branch. On refusal or a `BLOCKED` (dirty main tree) just run `session_move` and remind the user that the task branch is free for a manual `git switch`. If a WIP patch is applied in the main folder (git-manager probes `git -C <main> apply --check -R`), remind the user. The worktree is not removed.
+
+For a local-only plan (`branch: none`, gitignored files) the task `G: git close-out` is only a `git status` check in every affected repository, and `tdd` makes no commit.
 
 ## Watchdog and restart
 
-The local opencode plugin `subagent-watchdog` aborts any subagent session that stays `busy` or `retry` without activity for 10 minutes. Treat an aborted subagent as a hung step, not as a result.
+A local opencode plugin (`.opencode/plugins/subagent-watchdog.ts`) aborts any subagent session that stays `busy`/`retry` without activity for 10 minutes. Treat an aborted subagent as a hung step, not as a result.
 
 Signs that a stage made no progress:
 
@@ -73,24 +166,26 @@ Reaction:
 
 1. Take a `git diff --stat` snapshot before every dispatch, so “no progress” can be checked afterwards.
 2. On no progress, re-dispatch the same stage with a **fresh** session (never resume the hung one with `task_id`) and a narrowed scope: fewer files, a subset of the contract, or a single test file.
-3. Allow at most two restarts per stage. After the second failed restart return `BLOCKED` with “watchdog interrupted twice without progress” and list what was already verified.
+3. Allow at most two restarts per stage. After the second failed restart return `BLOCKED` with “watchdog прервал дважды без прогресса” and list what was already verified.
 4. A long run that finishes successfully with real changes is accepted, even if it took longer than 10 minutes. Elapsed time alone is never a reason to restart.
 
 While `tdd` runs, its own child sessions keep it alive: activity of a child refreshes the parent. Only a genuinely silent session is aborted.
 
 ## Output
 
-`DONE` or `BLOCKED` with a short summary of the contract, the tests, the red/green results, and the exact commands run.
+`DONE` or `BLOCKED` with a short summary of the contract, the tasks processed, the red/green results, and the exact commands run. The successful close-out report also ends with the «Предлагаемое описание MR» block (section 6). Answer the user in Russian.
 
 ## BLOCKED
 
-- The task branch or base branch is missing.
+- Task number, base branch, or task branch is missing.
 - The tree is dirty with tracked changes.
 - The user has not confirmed a branch switch or close-out.
 - `git-manager`, `test-generator`, or `coder` returns `BLOCKED`.
-- A stage was aborted by the watchdog twice without progress.
+- A stage was aborted by the watchdog twice without progress (“watchdog прервал дважды без прогресса”).
+- `agent_config_check` reports `fresh !== true` («конфиг агентов изменён после старта opencode — перезапусти сервер»), a guarded agent appears in `missingModel`, or the tool is unavailable.
 - The contract lacks a symbol, identifier, or selector that the tests need.
+- The progress file and the plan disagree on task IDs or order.
 
 ## Out of scope
 
-Writing production code or tests, editing configuration, running the full suite or coverage, committing, pushing, switching branches, merging, rebasing, cherry-picking, opening or merging a pull/merge request. Test rules are in the `testing` skill.
+Writing production code or tests, editing the plan or the application configuration, running the full `pnpm test` or coverage per task, pushing inside `коммит`, switching branches, merging, rebasing, cherry-picking, opening or merging an MR. Test rules are in the `testing` skill.

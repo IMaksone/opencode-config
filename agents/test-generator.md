@@ -1,52 +1,113 @@
 ---
-description: "Генератор тестов: пишет тесты по контракту, не меняет production-код"
+description: Генератор тестов: пишет тесты по контракту, не меняет production
 mode: subagent
-temperature: 0.1
+model: openrouter/deepseek/deepseek-v4.1-flash-1017#high
 steps: 50
-permission:
-  edit:
-    "*": deny
-    "**/*.test.*": allow
-    "**/*.spec.*": allow
-    "**/__tests__/**": allow
-    "**/tests/**": allow
-    "**/test/**": allow
-    "**/testdata/**": allow
-    "**/*_test.go": allow
-    "**/test_*.py": allow
-    "**/*_test.py": allow
-    "**/conftest.py": allow
-    "**/*Test.java": allow
-    "**/*Tests.java": allow
-    "**/*_test.rs": allow
-    "**/*.snap": allow
-    "**/snapshots/**": allow
-    ".git/**": deny
-    "**/.git/**": deny
-  bash:
-    "*": ask
-    cat: allow
-    "cat *": allow
-    grep: allow
-    "grep *": allow
-    head: allow
-    "head *": allow
-    ls: allow
-    "ls *": allow
-    rg: allow
-    "rg *": allow
-    tail: allow
-    "tail *": allow
-    wc: allow
-    "wc *": allow
-    "git status": allow
-    "git diff": allow
-    "git log": allow
-  task: deny
-  webfetch: deny
-  websearch: deny
+permissions:
+  - action: execute
+    resource: "*"
+    effect: deny
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: edit
+    resource: "src/*.test.ts"
+    effect: allow
+  - action: edit
+    resource: "src/*.test.tsx"
+    effect: allow
+  - action: edit
+    resource: "src/*.testHelpers.ts"
+    effect: allow
+  - action: edit
+    resource: "src/shared/testing/*"
+    effect: allow
+  - action: edit
+    resource: "src/shared/api/testing/*"
+    effect: allow
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "cat *"
+    effect: allow
+  - action: shell
+    resource: "echo *"
+    effect: allow
+  - action: shell
+    resource: "grep *"
+    effect: allow
+  - action: shell
+    resource: "head *"
+    effect: allow
+  - action: shell
+    resource: "ls *"
+    effect: allow
+  - action: shell
+    resource: "pwd"
+    effect: allow
+  - action: shell
+    resource: "rg *"
+    effect: allow
+  - action: shell
+    resource: "sed -n *"
+    effect: allow
+  - action: shell
+    resource: "sort *"
+    effect: allow
+  - action: shell
+    resource: "tail *"
+    effect: allow
+  - action: shell
+    resource: "uniq *"
+    effect: allow
+  - action: shell
+    resource: "wc *"
+    effect: allow
+  - action: shell
+    resource: "which *"
+    effect: allow
+  - action: shell
+    resource: "node --version"
+    effect: allow
+  - action: shell
+    resource: "pnpm --version"
+    effect: allow
+  - action: shell
+    resource: "pnpm lint *"
+    effect: allow
+  - action: shell
+    resource: "pnpm exec eslint *"
+    effect: allow
+  - action: shell
+    resource: "pnpm typecheck *"
+    effect: allow
+  - action: shell
+    resource: "pnpm exec vitest run *"
+    effect: allow
+  - action: shell
+    resource: "pnpm exec tsc *"
+    effect: allow
+  - action: shell
+    resource: "pnpm run lint"
+    effect: allow
+  - action: shell
+    resource: "pnpm run typecheck"
+    effect: allow
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: webfetch
+    resource: "*"
+    effect: deny
+  - action: websearch
+    resource: "*"
+    effect: deny
+  - action: delete
+    resource: "*"
+    effect: deny
 ---
 
 Load `test-first` with the `skill` tool and follow it.
-If the contract is missing, return `BLOCKED` and list what is missing.
+If `AGENTS.md` the skill is missing, return `BLOCKED` and list what is missing.
 Answer the user in Russian.

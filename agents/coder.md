@@ -1,56 +1,197 @@
 ---
-description: "Разработчик: реализует production-код по контракту до green, тесты не трогает"
+description: Разработчик: реализует production-код по контракту до green
 mode: subagent
-temperature: 0.1
+model: zai-coding-plan/glm-5.3-flash
 steps: 120
-permission:
-  edit:
-    "*": allow
-    ".env*": deny
-    "**/.env*": deny
-    "*.local": deny
-    "**/*.local": deny
-    ".git/**": deny
-    "**/.git/**": deny
-    "**/*.test.*": deny
-    "**/*.spec.*": deny
-    "**/__tests__/**": deny
-    "**/tests/**": deny
-    "**/test/**": deny
-    "**/testdata/**": deny
-    "**/*_test.go": deny
-    "**/test_*.py": deny
-    "**/*_test.py": deny
-    "**/conftest.py": deny
-    "**/*Test.java": deny
-    "**/*Tests.java": deny
-    "**/*_test.rs": deny
-    "**/snapshots/**": deny
-    "**/*.snap": deny
-  bash:
-    "*": ask
-    cat: allow
-    "cat *": allow
-    grep: allow
-    "grep *": allow
-    head: allow
-    "head *": allow
-    ls: allow
-    "ls *": allow
-    rg: allow
-    "rg *": allow
-    tail: allow
-    "tail *": allow
-    wc: allow
-    "wc *": allow
-    "git status": allow
-    "git diff": allow
-    "git log": allow
-  task: deny
-  webfetch: deny
-  websearch: deny
+permissions:
+  - action: execute
+    resource: "*"
+    effect: deny
+  - action: edit
+    resource: "*"
+    effect: deny
+  - action: edit
+    resource: ".opencode/*"
+    effect: allow
+  - action: edit
+    resource: "*/.opencode/*"
+    effect: allow
+  - action: edit
+    resource: "src/*"
+    effect: allow
+  - action: edit
+    resource: "src/*.test.ts"
+    effect: deny
+  - action: edit
+    resource: "src/*.test.tsx"
+    effect: deny
+  - action: edit
+    resource: "src/*.testHelpers.ts"
+    effect: deny
+  - action: edit
+    resource: "src/shared/testing/*"
+    effect: deny
+  - action: edit
+    resource: "src/shared/api/testing/*"
+    effect: deny
+  - action: delete
+    resource: "*"
+    effect: deny
+  - action: delete
+    resource: "src/*.ts"
+    effect: allow
+  - action: delete
+    resource: "src/*.tsx"
+    effect: allow
+  - action: delete
+    resource: "src/*.test.ts"
+    effect: ask
+  - action: delete
+    resource: "src/*.test.tsx"
+    effect: ask
+  - action: delete
+    resource: "src/*.testHelpers.ts"
+    effect: ask
+  - action: delete
+    resource: "src/shared/testing/*"
+    effect: ask
+  - action: delete
+    resource: "src/shared/api/testing/*"
+    effect: ask
+  - action: shell
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "cat *"
+    effect: allow
+  - action: shell
+    resource: "echo *"
+    effect: allow
+  - action: shell
+    resource: "grep *"
+    effect: allow
+  - action: shell
+    resource: "head *"
+    effect: allow
+  - action: shell
+    resource: "ls *"
+    effect: allow
+  - action: shell
+    resource: "pwd"
+    effect: allow
+  - action: shell
+    resource: "rg *"
+    effect: allow
+  - action: shell
+    resource: "sed -n *"
+    effect: allow
+  - action: shell
+    resource: "sort *"
+    effect: allow
+  - action: shell
+    resource: "tail *"
+    effect: allow
+  - action: shell
+    resource: "uniq *"
+    effect: allow
+  - action: shell
+    resource: "wc *"
+    effect: allow
+  - action: shell
+    resource: "which *"
+    effect: allow
+  - action: shell
+    resource: "node --version"
+    effect: allow
+  - action: shell
+    resource: "pnpm --version"
+    effect: allow
+  - action: shell
+    resource: "pnpm lint *"
+    effect: allow
+  - action: shell
+    resource: "pnpm exec eslint *"
+    effect: allow
+  - action: shell
+    resource: "pnpm typecheck *"
+    effect: allow
+  - action: shell
+    resource: "pnpm domains-check *"
+    effect: allow
+  - action: shell
+    resource: "node scripts/domain-graph.mjs --where *"
+    effect: allow
+  - action: shell
+    resource: "pnpm typecheck"
+    effect: allow
+  - action: shell
+    resource: "pnpm build *"
+    effect: allow
+  - action: shell
+    resource: "pnpm build"
+    effect: allow
+  - action: shell
+    resource: "pnpm exec vitest run *"
+    effect: allow
+  - action: shell
+    resource: "pnpm exec tsc *"
+    effect: allow
+  - action: shell
+    resource: "git status *"
+    effect: allow
+  - action: shell
+    resource: "git diff *"
+    effect: allow
+  - action: shell
+    resource: "git log *"
+    effect: allow
+  - action: shell
+    resource: "git show *"
+    effect: allow
+  - action: shell
+    resource: "git branch --show-current"
+    effect: allow
+  - action: shell
+    resource: "git branch --list *"
+    effect: allow
+  - action: shell
+    resource: "git rev-parse *"
+    effect: allow
+  - action: shell
+    resource: "git ls-tree *"
+    effect: allow
+  - action: shell
+    resource: "git -C * status *"
+    effect: allow
+  - action: shell
+    resource: "git -C * diff *"
+    effect: allow
+  - action: shell
+    resource: "git -C * log *"
+    effect: allow
+  - action: shell
+    resource: "git -C * show *"
+    effect: allow
+  - action: shell
+    resource: "pnpm run lint"
+    effect: allow
+  - action: shell
+    resource: "pnpm run typecheck"
+    effect: allow
+  - action: shell
+    resource: "pnpm run build"
+    effect: allow
+  - action: subagent
+    resource: "*"
+    effect: deny
+  - action: webfetch
+    resource: "*"
+    effect: deny
+  - action: websearch
+    resource: "*"
+    effect: deny
 ---
 
 Load `implement` with the `skill` tool and follow it.
-If the contract is missing, return `BLOCKED` and list what is missing.
+If `AGENTS.md` the skill is missing, return `BLOCKED` and list what is missing.
 Answer the user in Russian.

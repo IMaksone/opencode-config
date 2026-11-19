@@ -1,35 +1,51 @@
 ---
 name: architecture
-description: Use when placing new code, choosing imports, defining a module public API, or reviewing boundaries, dependencies, cycles, and state ownership.
+description: Use when placing project code in the FSD layers, choosing imports, exposing a module public API, or checking component and state conventions.
 ---
 
-# Architecture
+# Project architecture
 
-Language-, framework-, and layout-agnostic rules for keeping a codebase navigable. Follow the project's documented architecture first; use these rules when it is undocumented.
+Reference skill for Feature-Sliced Design and the project code conventions. Load it when you create a module, move code between layers, or review imports and state.
+
+## Inputs
+
+- The module or file you are about to create or change.
+- The layer it belongs to and its consumers.
 
 ## Process
 
-1. Identify the layer or module the change belongs to and its consumers.
-2. Keep dependencies one-directional: high-level orchestration may depend on low-level details, never the reverse. Shared utilities must not import feature, domain, or UI modules.
-3. Expose each module through a single public entry point (index, package root, or documented export). Import other modules only through their public API, not their internals.
-4. Keep private subfolders private: do not import another module's internal files.
-5. Do not create cycles between modules. If a cycle appears, extract the shared part downward or invert the dependency with an interface.
-6. Place code by ownership: behavior lives with the module that owns the data or feature; generic helpers go to the shared layer only once they are reused.
-7. Keep one reason to change per module. Split modules that mix transport, mapping, business rules, and presentation.
-8. Choose state by owner: server or external data in the data layer, navigation in routing state, cross-cutting UI selections in a dedicated store, local UI in local component state.
-9. Handle errors at boundaries: validate input, map transport errors to domain errors, surface user-facing messages at the edge. Do not swallow errors silently.
-10. Add tests next to the code in the layout the project already uses. Details: `testing`.
+1. Pick the layer: `app` → `pages` → `widgets` → `features` → `entities` → `shared`. Dependencies point only downward.
+2. Expose the module only through its `index.ts`. Import other modules from their public API.
+3. Inside `entities` and `features`, use relative imports for the same layer/domain; do not use `@/entities` or `@/features` there.
+4. Keep `_ui/` private to its module; do not import another module's `_ui/`.
+5. Features must not call the API of other features; they read through `entities` and `shared`.
+6. Make `ComponentWrapper` with `componentId` the root element of a component.
+7. Choose state by owner: RTK Query for server data, `pageNavigationState.use*()` for navigation, `sessionState.use*()` for stable UI selections, local `useState` for local UI.
+8. Handle errors after `.unwrap()` with `parseApiError` → `showToast.error` → `throwException`.
+
+Layer permissions:
+
+| Layer      | May import from                                      |
+| ---------- | ---------------------------------------------------- |
+| `app`      | `pages`, `features`, `widgets`, `shared`, `entities` |
+| `pages`    | `entities`, `features`, `widgets`, `shared`          |
+| `widgets`  | `shared`, `entities`, `features`                     |
+| `features` | `entities`, `shared`                                 |
+| `entities` | `shared`                                             |
+| `shared`   | only inside `shared`                                 |
+
+Entities read and map data through thin hooks plus `helper/<topic>.ts`; features own writes and mutations. The public namespace of `src/entities` is `entities`.
 
 ## Output
 
-A short list of the chosen layer, public exports, import style, state owner, and any boundary risk. In review mode: findings with file paths and the rule they break.
+A short list of the chosen layer, public exports, import style, state owner, and any boundary risk. In code review mode: findings with file paths and the rule they break.
 
 ## BLOCKED
 
-- The change needs an upward dependency or a cross-module internal import.
-- The module has no clear owner.
-- The task requires a new global state slice or public API without an explicit decision.
+- The change needs an upward dependency or a cross-feature API call.
+- The module has no clear layer.
+- The task requires a new global state slice without an explicit decision.
 
 ## Out of scope
 
-Rewriting the architecture, moving unrelated modules, and editing generated files. Prefer the project's own architecture docs when they exist.
+Rewriting the architecture, moving unrelated modules, and editing generated files. Full reference: [CODESTYLE.md](../../../CODESTYLE.md), [docs/file_structure.md](../../../docs/file_structure.md), [docs/entities.md](../../../docs/entities.md), [docs/features.md](../../../docs/features.md), [docs/api.md](../../../docs/api.md), [docs/state.md](../../../docs/state.md).
