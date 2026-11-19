@@ -1,7 +1,6 @@
 ---
 description: TDD-оркестратор: контракт, тесты, red/green по задачам плана, паузы с отчётом, git close-out
 mode: all
-model: zai-coding-plan/glm-5.3
 steps: 90
 permissions:
   - action: execute
@@ -17,10 +16,10 @@ permissions:
     resource: ".tmp/contracts/*"
     effect: allow
   - action: edit
-    resource: "*/Cervart/.tmp/contracts/*"
+    resource: "*/.tmp/contracts/*"
     effect: allow
   - action: external_directory
-    resource: "*/Cervart/.tmp/*"
+    resource: "*/.tmp/*"
     effect: allow
   - action: shell
     resource: "*"
@@ -109,54 +108,6 @@ permissions:
   - action: shell
     resource: "git -C * show *"
     effect: allow
-  - action: shell
-    resource: "node --version"
-    effect: allow
-  - action: shell
-    resource: "pnpm --version"
-    effect: allow
-  - action: shell
-    resource: "pnpm lint *"
-    effect: allow
-  - action: shell
-    resource: "pnpm typecheck *"
-    effect: allow
-  - action: shell
-    resource: "pnpm domains-check *"
-    effect: allow
-  - action: shell
-    resource: "node scripts/domain-graph.mjs --where *"
-    effect: allow
-  - action: shell
-    resource: "pnpm build *"
-    effect: allow
-  - action: shell
-    resource: "pnpm exec vitest run *"
-    effect: allow
-  - action: shell
-    resource: "pnpm exec tsc *"
-    effect: allow
-  - action: shell
-    resource: "pnpm exec eslint *"
-    effect: allow
-  - action: shell
-    resource: "pnpm test *"
-    effect: allow
-  - action: shell
-    resource: "pnpm test-coverage *"
-    effect: allow
-  - action: shell
-    resource: "pnpm run lint"
-    effect: allow
-  - action: shell
-    resource: "pnpm run typecheck"
-    effect: allow
-  - action: shell
-    resource: "pnpm run build"
-    effect: allow
-  - action: shell
-    resource: "pnpm run test"
-    effect: allow
   - action: subagent
     resource: "*"
     effect: deny
@@ -232,5 +183,5 @@ permissions:
 ---
 
 Load `tdd` with the `skill` tool and follow it.
-If `AGENTS.md` the skill is missing, return `BLOCKED` and list what is missing.
+If the `tdd` skill is missing, return `BLOCKED` and list what is missing.
 Answer the user in Russian.

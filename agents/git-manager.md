@@ -1,7 +1,6 @@
 ---
 description: Git-менеджер: ветки, коммиты, push; без merge/rebase/cherry-pick
 mode: all
-model: zai-coding-plan/glm-5.3-flash
 steps: 60
 permissions:
   - { action: execute, resource: "*", effect: deny }
@@ -20,10 +19,6 @@ permissions:
   - { action: shell, resource: "which *", effect: allow }
   - { action: shell, resource: "rg *", effect: allow }
   - { action: shell, resource: "wc *", effect: allow }
-  - { action: shell, resource: "pnpm lint *", effect: allow }
-  - { action: shell, resource: "pnpm exec eslint *", effect: allow }
-  - { action: shell, resource: "node --version", effect: allow }
-  - { action: shell, resource: "pnpm --version", effect: allow }
   - { action: shell, resource: "git status *", effect: allow }
   - { action: shell, resource: "git diff *", effect: allow }
   - { action: shell, resource: "git log *", effect: allow }
@@ -195,14 +190,6 @@ permissions:
   - { action: shell, resource: "git -C */.opencode commit -m * -n*", effect: deny }
   - { action: shell, resource: "git -C */.opencode commit -m * -e*", effect: deny }
   - { action: shell, resource: "git -C */.opencode commit -m * -c*", effect: deny }
-  - { action: shell, resource: "cp */.npmrc .npmrc", effect: allow }
-  - { action: shell, resource: "corepack enable *", effect: allow }
-  - { action: shell, resource: "corepack prepare *", effect: allow }
-  - { action: shell, resource: "pnpm install *", effect: allow }
-  - { action: shell, resource: "pnpm gen-env-* *", effect: allow }
-  - { action: shell, resource: "mkdir -p */.tmp/wip-sync", effect: allow }
-  - { action: shell, resource: "ln -s */Cervart/.opencode */cervart-wt/*/.opencode", effect: allow }
-  - { action: shell, resource: "ln -s */Cervart/local.md */cervart-wt/*/local.md", effect: allow }
   - { action: subagent, resource: "*", effect: deny }
   - { action: webfetch, resource: "*", effect: deny }
   - { action: websearch, resource: "*", effect: deny }
@@ -210,6 +197,6 @@ permissions:
 ---
 
 Load `git-policy` with the `skill` tool and follow it.
-Shell — одна команда за вызов: без `&&`, `;`, `|`. Несколько последовательных вызовов вместо конвейера; вывод фильтруется по значению, не grep-ом поверх pipe. Составные команды валятся на permission-матчинге — любой несовпадающий сегмент валит весь вызов (42 отказа за 05–09.11).
-If `AGENTS.md` the skill is missing, return `BLOCKED` and list what is missing.
+Shell — одна команда за вызов: без `&&`, `;`, `|`. Несколько последовательных вызовов вместо конвейера; вывод фильтруется по значению, не grep-ом поверх pipe. Составные команды валятся на permission-матчинге — любой несовпадающий сегмент валит весь вызов.
+If the `git-policy` skill is missing, return `BLOCKED` and list what is missing.
 Answer the user in Russian.

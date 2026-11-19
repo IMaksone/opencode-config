@@ -1,7 +1,6 @@
 ---
-description: Разработчик: реализует production-код по контракту до green
+description: Разработчик: реализует production-код по контракту до green, тесты не трогает
 mode: subagent
-model: zai-coding-plan/glm-5.3-flash
 steps: 120
 permissions:
   - action: execute
@@ -9,54 +8,105 @@ permissions:
     effect: deny
   - action: edit
     resource: "*"
-    effect: deny
-  - action: edit
-    resource: ".opencode/*"
     effect: allow
   - action: edit
-    resource: "*/.opencode/*"
-    effect: allow
-  - action: edit
-    resource: "src/*"
-    effect: allow
-  - action: edit
-    resource: "src/*.test.ts"
+    resource: ".env*"
     effect: deny
   - action: edit
-    resource: "src/*.test.tsx"
+    resource: "*.env*"
     effect: deny
   - action: edit
-    resource: "src/*.testHelpers.ts"
+    resource: "*.local"
     effect: deny
   - action: edit
-    resource: "src/shared/testing/*"
+    resource: ".git/*"
     effect: deny
   - action: edit
-    resource: "src/shared/api/testing/*"
+    resource: "*.test.*"
+    effect: deny
+  - action: edit
+    resource: "*.spec.*"
+    effect: deny
+  - action: edit
+    resource: "__tests__/*"
+    effect: deny
+  - action: edit
+    resource: "__snapshots__/*"
+    effect: deny
+  - action: edit
+    resource: "*.snap"
+    effect: deny
+  - action: edit
+    resource: "*_test.go"
+    effect: deny
+  - action: edit
+    resource: "*_test.py"
+    effect: deny
+  - action: edit
+    resource: "test_*.py"
+    effect: deny
+  - action: edit
+    resource: "conftest.py"
+    effect: deny
+  - action: edit
+    resource: "*Test.java"
+    effect: deny
+  - action: edit
+    resource: "*Tests.java"
+    effect: deny
+  - action: edit
+    resource: "*_test.rs"
     effect: deny
   - action: delete
     resource: "*"
+    effect: allow
+  - action: delete
+    resource: ".env*"
     effect: deny
   - action: delete
-    resource: "src/*.ts"
-    effect: allow
+    resource: "*.env*"
+    effect: deny
   - action: delete
-    resource: "src/*.tsx"
-    effect: allow
+    resource: "*.local"
+    effect: deny
   - action: delete
-    resource: "src/*.test.ts"
+    resource: ".git/*"
+    effect: deny
+  - action: delete
+    resource: "*.test.*"
     effect: ask
   - action: delete
-    resource: "src/*.test.tsx"
+    resource: "*.spec.*"
     effect: ask
   - action: delete
-    resource: "src/*.testHelpers.ts"
+    resource: "__tests__/*"
     effect: ask
   - action: delete
-    resource: "src/shared/testing/*"
+    resource: "__snapshots__/*"
     effect: ask
   - action: delete
-    resource: "src/shared/api/testing/*"
+    resource: "*.snap"
+    effect: ask
+  - action: delete
+    resource: "*_test.go"
+    effect: ask
+  - action: delete
+    resource: "*_test.py"
+    effect: ask
+  - action: delete
+    resource: "test_*.py"
+    effect: ask
+  - action: delete
+    resource: "conftest.py"
+    effect: ask
+  - action: delete
+    resource: "*Test.java"
+    effect: ask
+  - action: delete
+    resource: "*Tests.java"
+    effect: ask
+  - action: delete
+    resource: "*_test.rs"
     effect: ask
   - action: shell
     resource: "*"
@@ -101,42 +151,6 @@ permissions:
     resource: "which *"
     effect: allow
   - action: shell
-    resource: "node --version"
-    effect: allow
-  - action: shell
-    resource: "pnpm --version"
-    effect: allow
-  - action: shell
-    resource: "pnpm lint *"
-    effect: allow
-  - action: shell
-    resource: "pnpm exec eslint *"
-    effect: allow
-  - action: shell
-    resource: "pnpm typecheck *"
-    effect: allow
-  - action: shell
-    resource: "pnpm domains-check *"
-    effect: allow
-  - action: shell
-    resource: "node scripts/domain-graph.mjs --where *"
-    effect: allow
-  - action: shell
-    resource: "pnpm typecheck"
-    effect: allow
-  - action: shell
-    resource: "pnpm build *"
-    effect: allow
-  - action: shell
-    resource: "pnpm build"
-    effect: allow
-  - action: shell
-    resource: "pnpm exec vitest run *"
-    effect: allow
-  - action: shell
-    resource: "pnpm exec tsc *"
-    effect: allow
-  - action: shell
     resource: "git status *"
     effect: allow
   - action: shell
@@ -152,15 +166,6 @@ permissions:
     resource: "git branch --show-current"
     effect: allow
   - action: shell
-    resource: "git branch --list *"
-    effect: allow
-  - action: shell
-    resource: "git rev-parse *"
-    effect: allow
-  - action: shell
-    resource: "git ls-tree *"
-    effect: allow
-  - action: shell
     resource: "git -C * status *"
     effect: allow
   - action: shell
@@ -171,15 +176,6 @@ permissions:
     effect: allow
   - action: shell
     resource: "git -C * show *"
-    effect: allow
-  - action: shell
-    resource: "pnpm run lint"
-    effect: allow
-  - action: shell
-    resource: "pnpm run typecheck"
-    effect: allow
-  - action: shell
-    resource: "pnpm run build"
     effect: allow
   - action: subagent
     resource: "*"
@@ -193,5 +189,5 @@ permissions:
 ---
 
 Load `implement` with the `skill` tool and follow it.
-If `AGENTS.md` the skill is missing, return `BLOCKED` and list what is missing.
+If the `implement` skill is missing, return `BLOCKED` and list what is missing.
 Answer the user in Russian.

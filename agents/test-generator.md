@@ -1,7 +1,6 @@
 ---
 description: Генератор тестов: пишет тесты по контракту, не меняет production
 mode: subagent
-model: openrouter/deepseek/deepseek-v4.1-flash-1017#high
 steps: 50
 permissions:
   - action: execute
@@ -11,19 +10,40 @@ permissions:
     resource: "*"
     effect: deny
   - action: edit
-    resource: "src/*.test.ts"
+    resource: "*.test.*"
     effect: allow
   - action: edit
-    resource: "src/*.test.tsx"
+    resource: "*.spec.*"
     effect: allow
   - action: edit
-    resource: "src/*.testHelpers.ts"
+    resource: "__tests__/*"
     effect: allow
   - action: edit
-    resource: "src/shared/testing/*"
+    resource: "__snapshots__/*"
     effect: allow
   - action: edit
-    resource: "src/shared/api/testing/*"
+    resource: "*.snap"
+    effect: allow
+  - action: edit
+    resource: "*_test.go"
+    effect: allow
+  - action: edit
+    resource: "*_test.py"
+    effect: allow
+  - action: edit
+    resource: "test_*.py"
+    effect: allow
+  - action: edit
+    resource: "conftest.py"
+    effect: allow
+  - action: edit
+    resource: "*Test.java"
+    effect: allow
+  - action: edit
+    resource: "*Tests.java"
+    effect: allow
+  - action: edit
+    resource: "*_test.rs"
     effect: allow
   - action: shell
     resource: "*"
@@ -68,31 +88,19 @@ permissions:
     resource: "which *"
     effect: allow
   - action: shell
-    resource: "node --version"
+    resource: "git status *"
     effect: allow
   - action: shell
-    resource: "pnpm --version"
+    resource: "git diff *"
     effect: allow
   - action: shell
-    resource: "pnpm lint *"
+    resource: "git log *"
     effect: allow
   - action: shell
-    resource: "pnpm exec eslint *"
+    resource: "git show *"
     effect: allow
   - action: shell
-    resource: "pnpm typecheck *"
-    effect: allow
-  - action: shell
-    resource: "pnpm exec vitest run *"
-    effect: allow
-  - action: shell
-    resource: "pnpm exec tsc *"
-    effect: allow
-  - action: shell
-    resource: "pnpm run lint"
-    effect: allow
-  - action: shell
-    resource: "pnpm run typecheck"
+    resource: "git branch --show-current"
     effect: allow
   - action: subagent
     resource: "*"
@@ -109,5 +117,5 @@ permissions:
 ---
 
 Load `test-first` with the `skill` tool and follow it.
-If `AGENTS.md` the skill is missing, return `BLOCKED` and list what is missing.
+If the `test-first` skill is missing, return `BLOCKED` and list what is missing.
 Answer the user in Russian.

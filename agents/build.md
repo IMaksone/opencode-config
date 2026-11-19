@@ -1,7 +1,6 @@
 ---
 description: Сборка и проверки: lint, typecheck, build, tests без суб-агентов
 mode: all
-model: zai-coding-plan/glm-5.3
 steps: 120
 permissions:
   - action: execute
@@ -22,9 +21,57 @@ permissions:
   - action: edit
     resource: ".git/*"
     effect: deny
-  - action: edit
-    resource: ".husky/*"
+  - action: delete
+    resource: "*"
+    effect: allow
+  - action: delete
+    resource: ".env*"
     effect: deny
+  - action: delete
+    resource: "*.env*"
+    effect: deny
+  - action: delete
+    resource: "*.local"
+    effect: deny
+  - action: delete
+    resource: ".git/*"
+    effect: deny
+  - action: delete
+    resource: "*.test.*"
+    effect: ask
+  - action: delete
+    resource: "*.spec.*"
+    effect: ask
+  - action: delete
+    resource: "__tests__/*"
+    effect: ask
+  - action: delete
+    resource: "__snapshots__/*"
+    effect: ask
+  - action: delete
+    resource: "*.snap"
+    effect: ask
+  - action: delete
+    resource: "*_test.go"
+    effect: ask
+  - action: delete
+    resource: "*_test.py"
+    effect: ask
+  - action: delete
+    resource: "test_*.py"
+    effect: ask
+  - action: delete
+    resource: "conftest.py"
+    effect: ask
+  - action: delete
+    resource: "*Test.java"
+    effect: ask
+  - action: delete
+    resource: "*Tests.java"
+    effect: ask
+  - action: delete
+    resource: "*_test.rs"
+    effect: ask
   - action: shell
     resource: "*"
     effect: ask
@@ -94,57 +141,6 @@ permissions:
   - action: shell
     resource: "git -C * show *"
     effect: allow
-  - action: shell
-    resource: "node --version"
-    effect: allow
-  - action: shell
-    resource: "pnpm --version"
-    effect: allow
-  - action: shell
-    resource: "pnpm lint *"
-    effect: allow
-  - action: shell
-    resource: "pnpm lint-fix *"
-    effect: allow
-  - action: shell
-    resource: "pnpm typecheck *"
-    effect: allow
-  - action: shell
-    resource: "pnpm domains-check *"
-    effect: allow
-  - action: shell
-    resource: "node scripts/domain-graph.mjs --where *"
-    effect: allow
-  - action: shell
-    resource: "pnpm build *"
-    effect: allow
-  - action: shell
-    resource: "pnpm test *"
-    effect: allow
-  - action: shell
-    resource: "pnpm test-coverage *"
-    effect: allow
-  - action: shell
-    resource: "pnpm exec vitest *"
-    effect: allow
-  - action: shell
-    resource: "pnpm exec eslint *"
-    effect: allow
-  - action: shell
-    resource: "pnpm exec tsc *"
-    effect: allow
-  - action: shell
-    resource: "pnpm run lint"
-    effect: allow
-  - action: shell
-    resource: "pnpm run typecheck"
-    effect: allow
-  - action: shell
-    resource: "pnpm run build"
-    effect: allow
-  - action: shell
-    resource: "pnpm run test"
-    effect: allow
   - action: subagent
     resource: "*"
     effect: deny
@@ -154,30 +150,6 @@ permissions:
   - action: websearch
     resource: "*"
     effect: deny
-  - action: delete
-    resource: "*"
-    effect: deny
-  - action: delete
-    resource: "src/*.ts"
-    effect: allow
-  - action: delete
-    resource: "src/*.tsx"
-    effect: allow
-  - action: delete
-    resource: "src/*.test.ts"
-    effect: ask
-  - action: delete
-    resource: "src/*.test.tsx"
-    effect: ask
-  - action: delete
-    resource: "src/*.testHelpers.ts"
-    effect: ask
-  - action: delete
-    resource: "src/shared/testing/*"
-    effect: ask
-  - action: delete
-    resource: "src/shared/api/testing/*"
-    effect: ask
   - action: browser_*
     resource: "*"
     effect: deny
@@ -229,5 +201,5 @@ permissions:
 ---
 
 Load `build` with the `skill` tool and follow it.
-If `AGENTS.md` the skill is missing, return `BLOCKED` and list what is missing.
+If the `build` skill is missing, return `BLOCKED` and list what is missing.
 Answer the user in Russian.

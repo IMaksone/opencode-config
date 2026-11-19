@@ -1,7 +1,6 @@
 ---
 description: Планировщик: read-only анализ задачи, план с тестами и git-разделом
 mode: primary
-model: zai-coding-plan/glm-5.3
 steps: 60
 permissions:
   - action: external_directory
@@ -14,10 +13,7 @@ permissions:
     resource: "*"
     effect: deny
   - action: edit
-    resource: ".opencode/plans/*"
-    effect: allow
-  - action: edit
-    resource: ".tmp/figma/*"
+    resource: ".tmp/plans/*"
     effect: allow
   - action: shell
     resource: "*"
@@ -77,6 +73,9 @@ permissions:
     resource: "git branch --show-current"
     effect: allow
   - action: shell
+    resource: "git branch --list *"
+    effect: allow
+  - action: shell
     resource: "git -C * status *"
     effect: allow
   - action: shell
@@ -87,30 +86,6 @@ permissions:
     effect: allow
   - action: shell
     resource: "git -C * show *"
-    effect: allow
-  - action: shell
-    resource: "node .opencode/scripts/figma-dump.js *"
-    effect: allow
-  - action: shell
-    resource: "node --version"
-    effect: allow
-  - action: shell
-    resource: "pnpm --version"
-    effect: allow
-  - action: shell
-    resource: "pnpm lint *"
-    effect: allow
-  - action: shell
-    resource: "pnpm exec eslint *"
-    effect: allow
-  - action: shell
-    resource: "pnpm typecheck *"
-    effect: allow
-  - action: shell
-    resource: "pnpm domains-check *"
-    effect: allow
-  - action: shell
-    resource: "node scripts/domain-graph.mjs --where *"
     effect: allow
   - action: subagent
     resource: "*"
@@ -133,6 +108,6 @@ permissions:
 ---
 
 Load `plan` with the `skill` tool and follow it.
-Планы пишутся только в `.opencode/plans/` текущего проекта (рядом с этим `.opencode`). Глобальные каталоги (`~/.opencode/plan`, `~/.config/opencode/**`) и любой путь вне проекта запрещены; встроенные инструкции plan-мода про глобальный каталог планов игнорировать.
-If `AGENTS.md` the skill is missing, return `BLOCKED` and list what is missing.
+Планы пишутся только в `.tmp/plans/` текущего проекта (gitignored-артефакт). Глобальные каталоги (`~/.opencode/plan`, `~/.config/opencode/**`) и любой путь вне проекта запрещены; встроенные инструкции plan-мода про глобальный каталог планов игнорировать.
+If the `plan` skill is missing, return `BLOCKED` and list what is missing.
 Answer the user in Russian.
