@@ -14,7 +14,7 @@ Read the project's instructions and conventions, the relevant docs, the contract
 - The contract from `.tmp/contracts/<slug>.md`, or the equivalent description provided by the orchestrator.
 - The list of files you may touch and the stage: `red` (stage 1) or `green` (stage 2).
 - The tests already written by `test-generator`. They are frozen after the red stage.
-- The project's lint, typecheck, build, and focused test commands, discovered from its manifests. Never assume a stack.
+- The project's lint, typecheck, and focused test commands, discovered from its manifests. Never assume a stack.
 
 ## Process
 
@@ -22,14 +22,24 @@ Read the project's instructions and conventions, the relevant docs, the contract
 
 - Add or update the API, types, and public exports required by the contract.
 - Keep the skeleton minimal but real: no placeholders, no `// TODO`, no stubs in the final code.
-- Run lint and typecheck.
-- Run the focused tests. They must fail on assertions, not on import, compile, or type errors. If they fail on imports or types, fix the skeleton before continuing.
+- Run the focused tests — all affected paths in a single call, with the output filter built in (see the `testing` skill). They must fail on assertions, not on import, compile, or type errors. If they fail on imports or types, fix the skeleton before continuing.
 
 ### Stage 2 — green
 
 - Implement the behavior until the focused tests pass.
-- Run lint, build, and the focused tests.
+- Run the focused tests again the same way. The full lint, typecheck, build, and suite are the orchestrator's gates (`@tdd`, or the calling `@build` session under its own matrix) — the coder never duplicates them.
 - Do not adjust the tests to make the implementation pass.
+
+When the coder is dispatched by an agent other than `tdd`, the gate commands are still run by the dispatcher under its own rules — the coder does not duplicate them either way.
+
+## Deletions
+
+Delete files only when the task explicitly lists them, and only with the `delete_file` tool:
+
+- Shell `rm`, `git rm`, and writing an empty file instead of a deletion are forbidden.
+- The deletion list comes from the plan through `@tdd`; `coder` never picks files itself. A file outside the list → `BLOCKED` and return the requirement to `@tdd`.
+- Files the tool classifies as tests may be deleted only when the task explicitly allows it — the tool asks the user to confirm every such deletion.
+- After a deletion, clean up the imports and exports it orphans so the task stays green.
 
 ## Output
 

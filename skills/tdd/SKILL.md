@@ -5,7 +5,7 @@ description: "Use when orchestrating a test-first task: git preparation, contrac
 
 # TDD orchestration
 
-You coordinate a test-first workflow. The only files you may create or edit are contracts under `.tmp/contracts/**`. Never write production code or tests yourself.
+You coordinate a test-first workflow. The only files you may create or edit are contracts and the progress file under `.tmp/contracts/**`. Never write production code or tests yourself.
 
 Read the project's instructions and conventions, the relevant docs, and the plan before starting. Discover the project's lint, typecheck, build, and focused test commands from its manifests; never assume a stack.
 
@@ -17,6 +17,16 @@ Read the project's instructions and conventions, the relevant docs, and the plan
 - Verification commands found in the project. If they are missing, record them as absent and ask only when they are required to judge the stage.
 
 ## Process
+
+### 0. Agent config check
+
+Before the first dispatch and before **every** later dispatch, call the `agent_config_check` tool and read its JSON result:
+
+- `fresh !== true` → return `BLOCKED` with «agent config changed after the opencode start — restart the server» and list `checked`.
+- If the tool is unavailable, return `BLOCKED` naming the missing tool.
+- Remember the `agents` map (`agent → model`) so every dispatch can be checked against it.
+
+The guard's snapshot is bound to the **process**, not to a plugin load: agent files, skills, commands, `AGENTS.md`, `local.md`, and the root `opencode.json(c)` are snapshotted when the process starts. A dispatch from a stale instance must be treated as `BLOCKED`, never retried.
 
 ### 1. Git preparation
 
@@ -39,7 +49,7 @@ Write `.tmp/contracts/<slug>.md` with these sections:
 - Test identifiers
 - Out of scope
 
-Omit sections that do not apply, but keep the contract precise enough for `test-generator` to write tests without guessing selectors, identifiers, or API shapes.
+Omit sections that do not apply, but keep the contract precise enough for `test-generator` to write tests without guessing selectors, identifiers, or API shapes. When the plan splits the work into tasks, keep a progress file next to the contract (`.tmp/contracts/<slug>.progress.md`) and update it after every stage — an existing progress file marks a run continuation: resume from the first unfinished task instead of restarting.
 
 ### 3. Tests
 
@@ -52,6 +62,8 @@ Dispatch `coder` for stage 1. Verify that the tests fail on assertions, not on i
 ### 5. Green
 
 Dispatch a fresh `coder` session for stage 2. Verify with focused tests, lint, and build. If the dispatch shows no progress, apply “Watchdog and restart”.
+
+**Pause with a report** after red and after green when the run is interactive: a short report of the stage result, the exact commands, and the next step. Continue only on the user's confirmation («продолжай») or the plan's recorded batch approval; a `close` always needs its own explicit confirmation.
 
 ### 6. Final review and close-out
 
@@ -86,6 +98,7 @@ While `tdd` runs, its own child sessions keep it alive: activity of a child refr
 
 - The task branch or base branch is missing.
 - The tree is dirty with tracked changes.
+- `agent_config_check` reports a stale config or is unavailable.
 - The user has not confirmed a branch switch or close-out.
 - `git-manager`, `test-generator`, or `coder` returns `BLOCKED`.
 - A stage was aborted by the watchdog twice without progress.

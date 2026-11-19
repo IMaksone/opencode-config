@@ -26,7 +26,11 @@ Reference for writing and reviewing tests without assuming a language, framework
 5. Isolate: fresh state per test, reset mocks and timers, unsubscribe, clean up temporary files and servers.
 6. Prefer deterministic assertions. No sleeps, no reliance on ordering without an explicit assertion, no network access unless the test harness provides it.
 7. Test behavior and contracts, not private implementation details. One topic per test suite; names describe the expected behavior.
-8. Run focused tests first, then the broader suite when the task requires it. Report the exact commands.
+8. Run focused tests first, then the broader suite when the task requires it.
+
+## Running tests economically
+
+One run — one result. The truncated output preview may hide failure summaries (they often sit at the end of the output), so build the filter into the first and only run (`… 2>&1 | tail -80` or `… | grep -E '<failure markers>'`; `tail`/`grep`/`head` are allow-listed). Pass all affected paths in a single focused run — one cold start — never one file per run. Re-running the same command just to change the output filter is forbidden. When the framework supports a machine-readable report, write it to a file under `.tmp/` once (`--reporter=json` or the equivalent) and inspect that file with `rg`/`cat`.
 
 ## What to test
 

@@ -22,12 +22,16 @@ Read the project's instructions and conventions first, if present: `AGENTS.md`, 
 3. Keep exactly one open plan at a time. If `.tmp/plans/` already contains a plan for another task, stop and ask.
 4. Discover the stack and its commands: read manifests such as `package.json` scripts, `Makefile`, `justfile`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle*`, `composer.json`, `Gemfile`, `mix.exs`, plus CI config. Record the exact lint, typecheck, build and test commands you find. If they are missing, mark them `unknown`.
 5. Explore the codebase: module boundaries, existing public APIs, related tests, and docs. Prefer reading over guessing.
-6. Write the plan to `.tmp/plans/<task-slug>.md`.
+6. Before dispatching `@tdd` or `@build`, call the `agent_config_check` tool and record its result in the plan's **Runtime** section:
+   - `fresh !== true` → `BLOCKED`: «agent config changed after the opencode start — restart the server» and list `checked`;
+   - the tool is unavailable → `BLOCKED` naming the missing tool. The guard's snapshot is bound to the running process: agent files, skills, commands, `AGENTS.md`, `local.md`, and the root `opencode.json(c)` are snapshotted at process start; a dispatch from a stale instance must be treated as `BLOCKED`, never retried.
+7. Write the plan to `.tmp/plans/<task-slug>.md`.
 
 ## Plan format
 
 - **Goal**
 - **Context** — stack, commands found, constraints
+- **Runtime** — `agent_config_check` result (fresh, agents)
 - **Affected files**
 - **Steps** — small, ordered, no placeholders
 - **Risks**
@@ -45,6 +49,7 @@ One plan file under `.tmp/plans/` and a short summary: goal, key steps, risks, b
 - The goal is unclear or contradictory.
 - Unrelated tracked files are modified or staged.
 - A plan for another task is already open.
+- `agent_config_check` reports a stale config or is unavailable.
 - Writing the plan fails: report the error, do not retry.
 - A `tdd` or `build` subagent dispatched from this plan is aborted by the watchdog: do not restart it, return `BLOCKED` naming the interrupted step.
 
