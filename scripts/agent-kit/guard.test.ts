@@ -262,7 +262,28 @@ describe('installGuard', () => {
     expect(report.checked).toEqual([]);
   });
 
-  it('blocks a dispatch to a subagent without a model', async () => {
+  it('blocks a dispatch to a subagent without a model in strict mode', async () => {
+    const root = await createRoot();
+
+    await createAgentFiles(root);
+
+    const { ctx, toolHooks } = createContext(root);
+
+    process.env.OPENCODE_AGENT_GUARD_REQUIRE_MODEL = 'on';
+
+    try {
+      await installGuard(ctx);
+
+      await expect(
+        toolHooks.get('execute.before')?.({ input: { subagent_type: 'broken' }, tool: 'subagent' }),
+      ).rejects.toThrow(/has no model configured/u);
+    }
+    finally {
+      delete process.env.OPENCODE_AGENT_GUARD_REQUIRE_MODEL;
+    }
+  });
+
+  it('allows a modelless dispatch by default — the kit carries no model pins', async () => {
     const root = await createRoot();
 
     await createAgentFiles(root);
@@ -273,7 +294,7 @@ describe('installGuard', () => {
 
     await expect(
       toolHooks.get('execute.before')?.({ input: { subagent_type: 'broken' }, tool: 'subagent' }),
-    ).rejects.toThrow(/has no model configured/u);
+    ).resolves.toBeUndefined();
   });
 
   it('blocks a dispatch without a target agent', async () => {

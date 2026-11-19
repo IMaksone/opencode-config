@@ -1,63 +1,62 @@
 ---
 name: testing
-description: Use when writing or reviewing project unit tests: Vitest location and style, MSW API harness, fixtures, and focused run commands.
+description: "Use when writing or reviewing tests: choosing the level, following the project framework, isolating cases, and running focused checks."
 ---
 
 # Testing
 
-Condensed reference for unit tests. Full rules and per-module coverage notes: [docs/tests.md](../../../docs/tests.md).
+Reference for writing and reviewing tests without assuming a language, framework, or layout.
 
 ## Inputs
 
 - The module under change and its contract or plan.
-- The level: helper unit test, component behavior test, or API contract test.
+- The level: pure unit test, integration or component behavior test, or contract test at a boundary.
+- The project's test framework, configuration, and focused run command, discovered from its manifests and existing tests.
 
 ## Process
 
-1. Pick the level:
-   - `src/entities/**/helper/` — pure function tests, no React.
-   - `src/shared/**` — utilities, hook logic, components with runtime behavior.
-   - `src/shared/api/**` — endpoint contract, `transformResponse`, errors, tag invalidation.
-2. Place the test next to the source: `<module>.test.ts` or `<module>.test.tsx`. Test name = file name of the module under test.
-3. Use Vitest with `happy-dom`; the global setup is `src/shared/testing/setup.ts`. Do not add a local setup file.
-4. Use `@testing-library/react` (`render`, `screen`, `renderHook`, `act`), `@testing-library/user-event` (`userEvent.setup()`), and jest-dom matchers. Interactions go through `userEvent`, not `fireEvent`.
-5. Build data with factories from `src/shared/testing/testFixtures.ts`; do not re-implement production mapping in expected values.
-6. For API tests use the shared harness: `createApiTestHarness` creates an isolated API and store, `captureJsonRequests` asserts method/pathname/query/body, `server.use` adds special handlers, and unhandled requests fail the test (`onUnhandledRequest: 'error'`). Use realistic fixtures and assert `transformResponse` results.
-7. Isolate: reset mocks and timers in `afterEach` (`vi.restoreAllMocks()`, `vi.useRealTimers()`, `vi.unstubAllGlobals()`), `unsubscribe` manual subscriptions, never reuse a store between tests. The API setup already resets MSW handlers and RTK Query state.
-8. Test behavior, not implementation. One `describe` per module; English case names (`filters wells by selected codes as strings`). No layout snapshots.
-9. Run focused tests during the iteration; the full suite only at the final verification of the task/plan:
+1. Detect the framework and conventions from existing tests before writing anything: file naming, placement, imports, assertion style, fixture and mock helpers. Match them.
+2. Pick the level deliberately:
+   - pure functions and transformations — unit tests, no I/O;
+   - modules with side effects — mock the boundary, not the module under test;
+   - UI or components — behavior through public interactions;
+   - API or integration boundaries — request shape, response mapping, error paths.
+3. Place the test where the project already keeps tests. Do not create a parallel test tree.
+4. Build data with existing factories or fixtures. Do not re-implement production mapping in expected values.
+5. Isolate: fresh state per test, reset mocks and timers, unsubscribe, clean up temporary files and servers.
+6. Prefer deterministic assertions. No sleeps, no reliance on ordering without an explicit assertion, no network access unless the test harness provides it.
+7. Test behavior and contracts, not private implementation details. One topic per test suite; names describe the expected behavior.
+8. Run focused tests first, then the broader suite when the task requires it.
 
-```bash
-pnpm exec vitest run <paths> 2>&1 | tail -80    # ALL affected paths in ONE call
-pnpm exec vitest run src/entities 2>&1 | grep -E '✓|×|FAIL|Tests '
-pnpm test                                        # final verification only
-```
+## Running tests economically
 
-   One run — one result: build the output filter into the first run (`| tail`/`| grep` — allow-listed parts); re-running the same command to change the filter is forbidden. For a deep dive: `--reporter=json --outputFile=.tmp/<slug>.json`, then inspect the file with `rg`/`cat`.
+One run — one result. The truncated output preview may hide failure summaries (they often sit at the end of the output), so build the filter into the first and only run (`… 2>&1 | tail -80` or `… | grep -E '<failure markers>'`; `tail`/`grep`/`head` are allow-listed). Pass all affected paths in a single focused run — one cold start — never one file per run. Re-running the same command just to change the output filter is forbidden. When the framework supports a machine-readable report, write it to a file under `.tmp/` once (`--reporter=json` or the equivalent) and inspect that file with `rg`/`cat`.
 
 ## What to test
 
-- Pure utilities and helpers, including `src/entities/**/helper/**`.
-- Data, date, path, and color transformations, and side-effect utilities through DOM/API mocks.
+- Pure utilities, transformations, parsers, and validators.
+- Boundary behavior: validation, error mapping, retries, empty and edge inputs.
 - Components with runtime logic: callbacks, disabled states, values, pending states.
-- API: exact method, pathname (with `toBe`/`toEqual`, not `toContain`), query, body or `FormData`, error paths, cache invalidation observed through refetch.
+- Contract points: method, path, query, body, status, and error shapes.
 
 ## What not to test
 
-- Presentational markup without logic, barrel `index.ts`, thin skip-only entity hooks, `useExport*` wrappers, type-only modules, and snapshots.
-- RTK Query, MSW, or React inside `entities` helper tests.
-- Internal RTK Query configuration when a refetch proves the same behavior.
+- Presentational markup without logic, barrel or re-export modules, type-only modules.
+- Framework internals or third-party libraries.
+- Private helpers through indirect tricks when a public behavior covers them.
+- Snapshots unless the project already uses them deliberately.
 
 ## Output
 
-`DONE` or `BLOCKED` with the test files, the exact commands run, and their results. Answer the user in Russian.
+`DONE` or `BLOCKED` with the test files, the exact commands run, and their results.
 
 ## BLOCKED
 
 - The contract or public API lacks a selector, identifier, or shape the test needs.
 - The test would require production changes to compile.
-- The scenario is e2e-only.
+- The scenario is end-to-end only and the project has no e2e harness.
+- No test framework can be detected and the project has no test setup.
 
 ## Out of scope
 
-Production code, e2e tests, coverage thresholds, CI configuration. Entity hook structure: [docs/entities.md](../../../docs/entities.md); layering: `architecture`.
+Production code, end-to-end tests, coverage thresholds, CI configuration, deployment. Layering rules: `architecture`.

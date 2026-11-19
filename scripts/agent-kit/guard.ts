@@ -2,7 +2,10 @@
  * Agent config guard for opencode V2.
  *
  * Blocks subagent dispatch when any agent config input changed after the
- * opencode process started, or when the target subagent has no explicit model.
+ * opencode process started. The explicit-model requirement (no silent
+ * fallback to the parent model) is opt-in: it applies only when
+ * `OPENCODE_AGENT_GUARD_REQUIRE_MODEL` is set to `on` — the default kit
+ * carries no model pins, variants that pin models enable the strict check.
  *
  * The opencode context is declared locally on purpose: this module stays free of
  * `@opencode/plugin` so it is unit-testable with a fake context.
@@ -38,10 +41,18 @@ function storageKeyOf(directory: string): string {
 const DISPATCH_TOOLS = new Set(['subagent', 'task']);
 
 /**
- * Subagents that must carry an explicit model: a missing model silently falls
- * back to the parent model inside the subagent tool.
+ * Subagents that must carry an explicit model in strict mode: a missing model
+ * silently falls back to the parent model inside the subagent tool.
  */
 export const GUARDED_SUBAGENTS: readonly string[] = ['tdd', 'coder', 'test-generator', 'git-manager'];
+
+/** Environment key enabling the explicit-model requirement. */
+export const REQUIRE_MODEL_ENV_KEY = 'OPENCODE_AGENT_GUARD_REQUIRE_MODEL';
+
+/** Strict mode is opt-in: only an explicit `on`/`1`/`true` enables it. */
+export function isRequireModelEnabled(env: Record<string, string | undefined> = process.env): boolean {
+  return ['on', '1', 'true'].includes((env[REQUIRE_MODEL_ENV_KEY] ?? '').trim().toLowerCase());
+}
 
 type LogLevel = 'debug' | 'error' | 'info' | 'warn';
 
@@ -184,6 +195,7 @@ export async function installGuard(ctx: GuardContext): Promise<void> {
   };
 
   const bootId = bootID();
+  const requireModel = isRequireModelEnabled();
   const serverStartedAt = new Date(performance.timeOrigin).toISOString();
   const storageKey = storageKeyOf(directory);
   const stored = await ctx.storage.get(storageKey) as StoredSnapshot | undefined;
@@ -263,6 +275,10 @@ export async function installGuard(ctx: GuardContext): Promise<void> {
   };
 
   const assertAgentModel = async (agent: string): Promise<void> => {
+    if (!requireModel) {
+      return;
+    }
+
     if (!(await modelOf(agent))) {
       throw new Error(formatMissingModelMessage(agent));
     }
@@ -333,6 +349,7 @@ export async function installGuard(ctx: GuardContext): Promise<void> {
     bootId,
     checkedAt: serverStartedAt,
     files: Object.keys(initialSnapshot).length,
+    requireModel,
     reused,
   });
 }

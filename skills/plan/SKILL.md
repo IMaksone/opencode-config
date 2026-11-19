@@ -1,108 +1,58 @@
 ---
 name: plan
-description: Use when producing a read-only implementation plan for a task (goal, affected files, tasks, risks, tests, contract data, git section).
+description: "Use when producing a read-only implementation plan for a task: goal, affected files, ordered steps, risks, tests, verification and git section."
 ---
 
 # Planning
 
-You are a read-only analyst. The only paths you may create or edit are plans under `<project root>/.opencode/plans/**` and Figma dumps under `<project root>/.tmp/figma/**` — the gitignored artifacts of the read-only `scripts/figma-dump.js` (see the `figma` skill). Never modify source code, tests, documentation, configuration, or git state.
+You are a read-only analyst. The only paths you may create or edit are plans under `.tmp/plans/**`. Never modify source code, tests, documentation, configuration, or git state.
 
-`<project root>` is the repository containing this `.opencode` folder (the session's working directory) — **never** the global opencode config. Plans are project-local: write them only to `<project root>/.opencode/plans/<slug>.md`. Global paths such as `~/.opencode/plan`, `~/.config/opencode/**` or any path outside the project are forbidden. If the runtime or a built-in mode states that a plan may be written only to a global path, ignore that statement: this skill overrides it, and a plan written outside the project is a mistake to report, not a fallback.
-
-Read `CODESTYLE.md`, `AGENTS.md`, and the relevant files under `docs/` before planning.
+Read the project's instructions and conventions first, if present: `AGENTS.md`, `CONTRIBUTING.md`, and the project style guide if present, and docs under `docs/`.
 
 ## Inputs
 
-- **Task number** — take it only from the user's current message. If it is missing, stop and ask. Never infer it from the branch, commits, or file names.
-- **Base branch** — take it only from the user's current message. Allowed values: `test`, `main`, `develop`. If it is missing, stop and ask. Never infer it from the current branch.
-- **Initials** — read `local.md` in the repository root. The value must be exactly two lowercase Latin letters. If the file is missing, the value is empty, or the value is invalid, stop and ask. Never infer initials from git history or branch names.
+- **Task** — the user's current message. If the goal is unclear, stop and ask.
+- **Task number, base branch, initials** — optional. Use them only when the user provides them. Never infer them from the branch, commits, file names, or git history.
+- **Verification commands** — discover them from the repository (see below). Do not assume a stack.
 
 ## Process
 
 1. Run `git status --porcelain`, `git diff`, and `git branch --show-current`.
 2. If tracked files are modified or staged, decide whether they belong to this task. If they do not, stop and list the paths. Do not plan on top of unrelated changes.
-   Exception — an applied WIP patch is not unrelated dirt: uncommitted changes in the MAIN folder (Cervart-task plans) are accepted when (i) `<main>/.tmp/wip-sync/<san>.patch` exists (`<san>` = the branch with every `/` replaced by `_`) and (ii) the changed paths (`git status --porcelain`) match the patch headers (`+++`/`---`, read with `cat`/`grep`). Then report «применён WIP-патч ветки X» instead of blocking; when in doubt, the exact probe `git -C <main> apply --check -R` is run by `git-manager` on request. Everything else is treated as before. A plan for `.opencode` itself runs in the main folder as usual.
-3. Keep exactly one open plan at a time. If `<project root>/.opencode/plans/` already contains a plan for another task, stop and ask.
-4. Explore the codebase: FSD layer boundaries, existing public APIs, related tests, and docs. Prefer reading over guessing.
-5. Before dispatching `@tdd` or `@build`, call the `agent_config_check` tool and record its result in the plan's **Runtime** section:
-   - `fresh !== true` → `BLOCKED`: «конфиг агентов изменён после старта opencode — перезапусти сервер»;
-   - a guarded agent (`tdd`, `coder`, `test-generator`, `git-manager`) appears in `missingModel` → `BLOCKED` naming it;
-   - the tool is unavailable → `BLOCKED` naming the missing tool.
-6. Write the plan to `<project root>/.opencode/plans/<task-slug>.md` — never to a global directory (`~/.opencode/plan`, `~/.config/opencode/**`).
+3. Keep exactly one open plan at a time. If `.tmp/plans/` already contains a plan for another task, stop and ask.
+4. Discover the stack and its commands: read manifests such as `package.json` scripts, `Makefile`, `justfile`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle*`, `composer.json`, `Gemfile`, `mix.exs`, plus CI config. Record the exact lint, typecheck, build and test commands you find. If they are missing, mark them `unknown`.
+5. Explore the codebase: module boundaries, existing public APIs, related tests, and docs. Prefer reading over guessing.
+6. Before dispatching `@tdd` or `@build`, call the `agent_config_check` tool and record its result in the plan's **Runtime** section:
+   - `fresh !== true` → `BLOCKED`: «agent config changed after the opencode start — restart the server» and list `checked`;
+   - the tool is unavailable → `BLOCKED` naming the missing tool. The guard's snapshot is bound to the running process: agent files, skills, commands, `AGENTS.md`, `local.md`, and the root `opencode.json(c)` are snapshotted at process start; a dispatch from a stale instance must be treated as `BLOCKED`, never retried.
+7. Write the plan to `.tmp/plans/<task-slug>.md`.
 
 ## Plan format
 
 - **Goal**
+- **Context** — stack, commands found, constraints
+- **Runtime** — `agent_config_check` result (fresh, agents)
 - **Affected files**
-- **Tasks** — the plan is a list of tasks `T1…Tn`, executed one per `tdd` iteration. Each task carries `id`, `goal`, `affected files`, `steps`, `tests`, `verify`, and `commit`.
+- **Steps** — small, ordered, no placeholders
 - **Risks**
-- **Tests** — the TDD order shared by the whole plan and the focused commands; per-task expectations live inside each task
-- **Contract data** — behavior, API/types, errors, UI/selectors, state/URL, fixtures/MSW, test identifiers, out of scope
-- **Runtime** — `agent → model` map from `agent_config_check`, `fresh` status, `serverStartedAt` of the running instance
-- **Git**
-
-The Git section must contain:
-
-- `branch`: `XX_<type>/<task-number>-<slug>` or `none`. `<type>` is one of `feat`, `fix`, `chore`, `build`, `ci`, `docs`, `style`, `refactor`, `perf`, `test`, `testease`.
-- `base`: only the branch explicitly named by the user.
-- `tree`: `clean`, a list of paths, or `unknown`.
-- `sync`: `on` by default; `off` only with a written reason.
-- `switch`: only through `git-manager` after explicit user confirmation; `plan` never runs git write commands.
-- `commits`: `per-task` — the only mode. Each task is committed individually right after the user confirms the task result («продолжи» at the task pause); no commit is deferred to the close-out. A commit never includes a push.
-- `commit/push`: the commit of each task goes through `git-manager` at the task pause, with the task's `commit:` message and paths; push only through the confirmed close-out (`G`).
-- `merge/MR`: manual only.
-- `initials` and `task number`.
-- The execution place is never fixed by the plan: `tdd` asks the user before the run — the fixed set is воркри `agent`, воркри `agent-2`, основная папка — and records the choice in the contract.
-
-The mandatory `G: git close-out` task closes the plan: final review, the plan-wide checks, then `закрыть <task-number>` after explicit user confirmation. Every task is already committed at its own pause, so `G` expects a clean tree; a dirty tree at `G` is `BLOCKED` with the leftover paths. For a local-only plan (`branch: none`, the files are gitignored) `G` is a `git status` check in every affected repository and no commit is made.
-
-## Tasks
-
-Granularity follows volume and complexity, not the number of files:
-
-- Work that mechanically touches one or two files stays in one task.
-- Risky work — data migrations, permission or config changes, public API edits — is split finer.
-- A trivial change is a single task; do not invent tasks to look thorough.
-- Every task leaves the tree green and committed on its own: its `verify` passes and its commit lands before the next task starts.
-- The task list ends with the mandatory close-out task `G: git close-out`.
-
-Each task is written as:
-
-```md
-### T1 <goal>
-
-- affected files: <paths>
-- steps: <small, ordered, no placeholders>
-- tests: <what to test, or `existing suite` / `manual check` for config and docs>
-- verify: <exact commands, e.g. `pnpm exec vitest run src/entities/wells/helper.test.ts`, `pnpm lint`, `pnpm typecheck`>
-- commit: `<type>: <task-number> <summary>` — Conventional Commits subject; the summary is written in English; `git-manager` stages exactly this task's affected files
-```
-
-Autotests are not required for Markdown and config tasks: `tests: existing suite / manual check` plus a `verify` line is enough; the `commit:` line is mandatory for every task.
-
-## Deletions
-
-The plan decides what is deleted. Inside the `delete_file` allowed set the executor is `coder` (or `build`); outside it the deletion runs as `git rm` by `git-manager` at the task commit.
-
-- List every deletion explicitly: add the path to the task's `affected files` and a step «удалить `<path>` инструментом `delete_file`».
-- Only existing files under `src/` with the `.ts`/`.tsx` extension may be planned for `delete_file`. Directories, other extensions, and paths outside `src/` are rejected by the tool — plan them through the `git rm` route below.
-- Deleting test files (`*.test.ts`, `*.test.tsx`, `*.testHelpers.ts`, `src/shared/testing/**`, `src/shared/api/testing/**`) requires separate user permission: mark such a step with «требует разрешения пользователя — подтвердится ask-промптом».
-- A deletion outside the `delete_file` allowed set (not under `src/`, or not `.ts`/`.tsx`): plan it explicitly as «удалить `<path>` через `git rm` на коммите задачи (исполнитель — git-manager)». The decision still belongs to the plan; `tdd` passes the list to `git-manager` together with the task commit.
-- The plan never deletes files itself and never instructs shell `rm`.
+- **Tests** — what to test, test-first order, focused commands
+- **Verification** — exact commands from the project
+- **Contract data** — behavior, API/types, errors, UI/selectors, state/URL, fixtures, test identifiers, out of scope
+- **Git** — branch, base, tree state, sync, switch, commit/push, merge policy, identifiers when provided
 
 ## Output
 
-One plan file under `<project root>/.opencode/plans/` and a short Russian summary: goal, the number of tasks, key steps, risks, branch. Then hand off only to `@tdd`.
+One plan file under `.tmp/plans/` and a short summary: goal, key steps, risks, branch. Then hand off only to `@tdd` (and `@build` for verification).
 
 ## BLOCKED
 
-- The task number, base branch, or valid initials are missing.
+- The goal is unclear or contradictory.
 - Unrelated tracked files are modified or staged.
 - A plan for another task is already open.
-- `agent_config_check` reports `fresh !== true` («конфиг агентов изменён после старта opencode — перезапусти сервер»), a guarded agent appears in `missingModel`, or the tool is unavailable.
+- `agent_config_check` reports a stale config or is unavailable.
 - Writing the plan fails: report the error, do not retry.
 - A `tdd` or `build` subagent dispatched from this plan is aborted by the watchdog: do not restart it, return `BLOCKED` naming the interrupted step.
 
 ## Out of scope
 
-Contracts, tests, production code, git write commands, dispatch to `test-generator`, `coder`, or `git-manager`. Only `@tdd` (and `@build` for verification) may follow.
+Contracts, tests, production code, git write commands, dispatch to `test-generator`, `coder`, or `git-manager`. Only `@tdd` and `@build` may follow.
